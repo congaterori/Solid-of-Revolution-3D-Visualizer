@@ -21,6 +21,9 @@
     --teal-dim:#2f6f66;
     --amber:#f5a524;
     --rose:#e2685f;
+    --green:#4ade80;
+    --blue:#60a5fa;
+    --pink:#f472b6;
   }
   *{box-sizing:border-box;}
   html,body{height:100%;}
@@ -39,15 +42,15 @@
   }
   /* ---------- Control panel ---------- */
   .panel{
-    width:340px;
-    min-width:340px;
+    width:370px;
+    min-width:370px;
     background:var(--panel);
     border-right:1px solid var(--panel-line);
     padding:28px 24px;
     overflow-y:auto;
     display:flex;
     flex-direction:column;
-    gap:22px;
+    gap:18px;
   }
   .brand{
     display:flex;
@@ -189,6 +192,15 @@
     cursor:pointer;
     border:2px solid var(--ink);
   }
+  input[type="range"].green-slider::-webkit-slider-thumb{
+    background:var(--green);
+  }
+  input[type="range"].pink-slider::-webkit-slider-thumb{
+    background:var(--pink);
+  }
+  input[type="range"].grey-slider::-webkit-slider-thumb{
+    background:#9ca3af;
+  }
   .readout{
     background:#0a0e13;
     border:1px solid var(--panel-line);
@@ -229,6 +241,15 @@
     font-size:11.5px;
     color:var(--chalk-dim);
     line-height:1.5;
+  }
+  /* ---------- 2D Preview canvas ---------- */
+  .preview-canvas{
+    background:#0a0e13;
+    border:1px solid var(--panel-line);
+    border-radius:8px;
+    width:100%;
+    height:150px;
+    display:block;
   }
   /* ---------- Viewport ---------- */
   .viewport{
@@ -295,7 +316,7 @@
 
     <div class="field">
       <label for="fnInput">f₁(x) — upper curve 1</label>
-      <input type="text" id="fnInput" value="x^2">
+      <input type="text" id="fnInput" value="3*sqrt(x-1)">
     </div>
     <div class="field">
       <label for="hnInput">f₂(x) — upper curve 2 (optional)</label>
@@ -303,17 +324,17 @@
     </div>
     <div class="field">
       <label for="gnInput">g(x) — lower curve</label>
-      <input type="text" id="gnInput" placeholder="default: y=0 for vertical axis, or the axis itself for horizontal axis (single curve only)">
+      <input type="text" id="gnInput" value="0">
     </div>
 
     <div class="row">
       <div class="field">
         <label for="aInput">from x =</label>
-        <input type="text" id="aInput" value="0">
+        <input type="text" id="aInput" value="1">
       </div>
       <div class="field">
         <label for="bInput">to x =</label>
-        <input type="text" id="bInput" value="2">
+        <input type="text" id="bInput" value="4">
       </div>
     </div>
 
@@ -328,7 +349,7 @@
     </div>
     <div class="field axis-line">
       <span class="eq" id="axisEqLabel">y =</span>
-      <input type="text" id="kInput" value="0" placeholder="value (k)">
+      <input type="text" id="kInput" value="-6" placeholder="value (k)">
     </div>
 
     <button class="btn-primary" id="renderBtn">Build the solid</button>
@@ -344,7 +365,35 @@
 
     <div class="error-banner" id="errorBanner"></div>
 
-    <div class="divider"></div>
+    <!-- 2D Region Preview -->
+    <canvas id="previewCanvas" class="preview-canvas" width="322" height="150"></canvas>
+
+    <!-- Green slider for blue rectangle -->
+    <div class="slider-field">
+      <div class="slider-label-row">
+        <span style="color:var(--green);">Slide Me! (blue x position)</span>
+        <span class="val" id="blueXVal">2.5</span>
+      </div>
+      <input type="range" id="blueXSlider" min="0" max="4" value="2.5" step="0.01" class="green-slider">
+    </div>
+
+    <!-- Pink slider for number of rectangles -->
+    <div class="slider-field">
+      <div class="slider-label-row">
+        <span style="color:var(--pink);">Pink rectangles (n)</span>
+        <span class="val" id="pinkNVal">20</span>
+      </div>
+      <input type="range" id="pinkNSlider" min="1" max="100" value="20" step="1" class="pink-slider">
+    </div>
+
+    <!-- Grey slider for revolution angle -->
+    <div class="slider-field">
+      <div class="slider-label-row">
+        <span style="color:#9ca3af;">Rotation angle θ</span>
+        <span class="val" id="angleVal">360°</span>
+      </div>
+      <input type="range" id="angleSlider" min="0" max="360" value="360" step="1" class="grey-slider">
+    </div>
 
     <div class="slider-field">
       <div class="slider-label-row"><span>Transparency</span><span class="val" id="opVal">0.55</span></div>
@@ -356,25 +405,18 @@
       <div class="line"><span class="k">Method</span><span class="v" id="methodOut">—</span></div>
     </div>
 
-<div class="hint">
-      Function syntax: <b>sin(x)</b>, <b>cos(x)</b>, <b>ln(x)</b>, <b>sqrt(x)</b>, <b>e^x</b>, <b>(sin(x))^(1/2)</b>, <b>pi</b>.<br>
-      Use <b>^</b> for powers and <b>*</b> for multiplication.<br>
-      <br>
-      <b>Three curves:</b> The region is bounded above by the <b>minimum</b> of f₁ and f₂ (if given), and below by g (or the axis when only one curve is used).<br>
-      Example: f₁ = x², f₂ = 8−x², g = 0 (or leave empty with horizontal axis).<br>
-      <br>
-      The grey grid sits at <b>y = 0</b>. The red dashed line is the revolution axis.<br>
-      Coordinate axes: <span style="color:#ff5555">x</span>, <span style="color:#55ff55">y</span>, <span style="color:#5555ff">z</span>.
-      <br><br>
-      View the source code on <a href="https://github.com/congaterori/Solid-of-Revolution-3D-Visualizer" target="_blank" onclick="event.stopPropagation();" style="color: var(--teal); text-decoration: underline; word-break: break-all;">https://github.com/congaterori/Solid-of-Revolution-3D-Visualizer</a>.
+    <div class="hint">
+      <b>Green slider</b> moves the blue sample rectangle.<br>
+      <b>Pink slider</b> changes number of Riemann rectangles (now fully inside).<br>
+      <b>Grey slider</b> spins the slices around the axis.
     </div>
-  </div> <!-- 1. This closes .hint AND 2. This closes .panel to separate it from the viewport! -->
+  </div>
 
   <div class="viewport">
     <canvas id="glcanvas"></canvas>
     <div class="viewport-hud">
-      <div class="eq-label" id="hudEq">y = sin(x)</div>
-      <div id="hudAxis">rotated about y = 0</div>
+      <div class="eq-label" id="hudEq">y = 3*sqrt(x-1)</div>
+      <div id="hudAxis">rotated about y = -6</div>
       <div style="margin-top:2px; color:var(--teal-dim);" id="hudAxisWorld"></div>
     </div>
     <div class="controls-hint">drag to orbit · scroll to zoom</div>
@@ -383,9 +425,10 @@
       <span><span class="dot" style="background:var(--amber)"></span>outer curve(s)</span>
       <span><span class="dot" style="background:#f5a52480"></span>inner curve</span>
       <span><span class="dot" style="background:var(--rose)"></span>axis of revolution</span>
+      <span><span class="dot" style="background:var(--blue)"></span>sample slice</span>
     </div>
   </div>
-</div> <!-- 3. This closes the main .app wrapper -->
+</div>
 
 <script>
 window.addEventListener('load', function(){
@@ -398,6 +441,24 @@ window.addEventListener('load', function(){
   var outerCurve2Mesh = null;
   var target = new THREE.Vector3(0,0,0);
   var spherical = { radius: 8, theta: Math.PI*0.28, phi: Math.PI*0.38 };
+
+  // Groups for highlights
+  var highlightGroup = new THREE.Group();
+  var pink3DGroup = new THREE.Group();
+  solidGroup.add(highlightGroup);
+  solidGroup.add(pink3DGroup);
+
+  // 2D preview canvas
+  var previewCanvas = document.getElementById('previewCanvas');
+  var previewCtx = previewCanvas.getContext('2d');
+
+  // State
+  var currentState = {
+    f1: null, f2: null, top: null, bottom: null,
+    a: 0, b: 0, k: 0, axisType: 'horizontal',
+    opacity: 0.55, maxAngle: 2*Math.PI,
+    blueX: 2.5
+  };
 
   // ---- Extend math.js with custom functions ----
   math.import({
@@ -523,7 +584,7 @@ window.addEventListener('load', function(){
     return math.evaluate(str);
   }
 
-  // Simpson's rule numerical integration
+  // Simpson's rule
   function simpson(f, a, b, n){
     if(n % 2 === 1) n++;
     var h = (b-a)/n, sum = f(a) + f(b);
@@ -534,7 +595,7 @@ window.addEventListener('load', function(){
     return sum * h / 3;
   }
 
-  // Build closed loop of region between top(x) and bottom(x) over [a,b]
+  // Build closed loop
   function buildLoop(top, bottom, a, b, M){
     var pts = [];
     var wallSamples = Math.max(2, Math.round(M*0.06));
@@ -543,23 +604,19 @@ window.addEventListener('load', function(){
     var ya0 = top(a), yb0 = top(b);
     var ya1 = bottom(a), yb1 = bottom(b);
 
-    // left wall: from bottom(a) to top(a)
     for(var i=0;i<wallSamples;i++){
       var t = i/(wallSamples-1);
       pts.push({x:a, y: ya1 + (ya0-ya1)*t});
     }
-    // top curve
     for(var i=1;i<curveSamples;i++){
       var t = i/(curveSamples-1);
       var x = a + (b-a)*t;
       pts.push({x:x, y:top(x)});
     }
-    // right wall: from top(b) to bottom(b)
     for(var i=1;i<wallSamples;i++){
       var t = i/(wallSamples-1);
       pts.push({x:b, y: yb0 + (yb1-yb0)*t});
     }
-    // bottom curve (reverse)
     for(var i=1;i<curveSamples-1;i++){
       var t = i/(curveSamples-1);
       var x = b - (b-a)*t;
@@ -570,11 +627,293 @@ window.addEventListener('load', function(){
 
   function disposeMesh(m){
     if(!m) return;
-    solidGroup.remove(m);
+    if(m.parent) m.parent.remove(m);
     if(m.geometry) m.geometry.dispose();
     if(m.material) m.material.dispose();
   }
 
+  // ---- Utility: get inner-sampled heights for a subinterval ----
+  function getInnerHeights(top, bottom, x0, x1, samples) {
+    var topVals = [], bottomVals = [];
+    for (var i = 0; i <= samples; i++) {
+      var x = x0 + (x1 - x0) * i / samples;
+      topVals.push(top(x));
+      bottomVals.push(bottom(x));
+    }
+    return {
+      topMin: Math.min.apply(null, topVals),
+      bottomMax: Math.max.apply(null, bottomVals)
+    };
+  }
+
+  // ---- 2D Preview Drawing ----
+  function drawPreview(state, pinkN) {
+    if (!previewCtx) return;
+    var w = previewCanvas.width, h = previewCanvas.height;
+    previewCtx.clearRect(0, 0, w, h);
+    var top = state.top, bottom = state.bottom, a = state.a, b = state.b;
+    var k = state.k, axisType = state.axisType;
+    var blueX = state.blueX;
+
+    var samples = 80;
+    var yMin = Infinity, yMax = -Infinity;
+    for (var i = 0; i <= samples; i++) {
+      var x = a + (b-a)*i/samples;
+      var yt = top(x), yb = bottom(x);
+      yMin = Math.min(yMin, yb);
+      yMax = Math.max(yMax, yt);
+    }
+    if (axisType === 'horizontal') {
+      yMin = Math.min(yMin, k);
+      yMax = Math.max(yMax, k);
+    }
+    var pad = (yMax - yMin) * 0.15 || 1;
+    yMin -= pad; yMax += pad;
+
+    function scaleX(x) { return 20 + (x - a) / (b - a) * (w - 40); }
+    function scaleY(y) { return h - 20 - (y - yMin) / (yMax - yMin) * (h - 40); }
+
+    // Pink rectangles – use inner heights so they stay inside
+    if (pinkN > 0) {
+      var dx = (b - a) / pinkN;
+      previewCtx.fillStyle = 'rgba(244, 114, 182, 0.3)';
+      previewCtx.strokeStyle = 'rgba(244, 114, 182, 0.5)';
+      previewCtx.lineWidth = 0.5;
+      for (var i = 0; i < pinkN; i++) {
+        var x0 = a + i * dx;
+        var x1 = x0 + dx;
+        var hts = getInnerHeights(top, bottom, x0, x1, 4);
+        var yTop = hts.topMin;
+        var yBot = hts.bottomMax;
+        if (yBot > yTop) { var tmp = yTop; yTop = yBot; yBot = tmp; }
+        var sx0 = scaleX(x0), sx1 = scaleX(x1);
+        var syTop = scaleY(yTop), syBot = scaleY(yBot);
+        previewCtx.fillRect(sx0, syTop, sx1 - sx0, syBot - syTop);
+        previewCtx.strokeRect(sx0, syTop, sx1 - sx0, syBot - syTop);
+      }
+    }
+
+    // Region outline
+    previewCtx.beginPath();
+    for (var i = 0; i <= samples; i++) {
+      var x = a + (b-a)*i/samples;
+      var yt = top(x);
+      var sx = scaleX(x), sy = scaleY(yt);
+      if (i === 0) previewCtx.moveTo(sx, sy);
+      else previewCtx.lineTo(sx, sy);
+    }
+    for (var i = samples; i >= 0; i--) {
+      var x = a + (b-a)*i/samples;
+      var yb = bottom(x);
+      var sx = scaleX(x), sy = scaleY(yb);
+      previewCtx.lineTo(sx, sy);
+    }
+    previewCtx.closePath();
+    previewCtx.fillStyle = 'rgba(94, 234, 212, 0.15)';
+    previewCtx.fill();
+    previewCtx.strokeStyle = '#5eead4';
+    previewCtx.lineWidth = 1.5;
+    previewCtx.stroke();
+
+    // Blue rectangle – uses exact left‑endpoint heights (by design)
+    if (blueX >= a && blueX <= b) {
+      var blueW = (b - a) / 50;
+      var xLeft = blueX - blueW/2;
+      var xRight = blueX + blueW/2;
+      if (xLeft < a) xLeft = a;
+      if (xRight > b) xRight = b;
+      var yTop = top(blueX);
+      var yBot = bottom(blueX);
+      var sx0 = scaleX(xLeft), sx1 = scaleX(xRight);
+      var syTop = scaleY(yTop), syBot = scaleY(yBot);
+      previewCtx.fillStyle = 'rgba(96, 165, 250, 0.4)';
+      previewCtx.strokeStyle = '#60a5fa';
+      previewCtx.lineWidth = 2;
+      previewCtx.fillRect(sx0, syTop, sx1 - sx0, syBot - syTop);
+      previewCtx.strokeRect(sx0, syTop, sx1 - sx0, syBot - syTop);
+    }
+
+    // Axis (red dashed)
+    previewCtx.strokeStyle = '#e2685f';
+    previewCtx.setLineDash([4, 4]);
+    previewCtx.lineWidth = 1.5;
+    if (axisType === 'vertical') {
+      var sx = scaleX(k);
+      if (sx >= 0 && sx <= w) {
+        previewCtx.beginPath();
+        previewCtx.moveTo(sx, 0);
+        previewCtx.lineTo(sx, h);
+        previewCtx.stroke();
+      }
+    } else {
+      var sy = scaleY(k);
+      if (sy >= 0 && sy <= h) {
+        previewCtx.beginPath();
+        previewCtx.moveTo(0, sy);
+        previewCtx.lineTo(w, sy);
+        previewCtx.stroke();
+      }
+    }
+    previewCtx.setLineDash([]);
+
+    // x-axis (y=0)
+    previewCtx.strokeStyle = '#2f6f66';
+    previewCtx.lineWidth = 1;
+    var zeroY = scaleY(0);
+    if (zeroY > 0 && zeroY < h) {
+      previewCtx.beginPath();
+      previewCtx.moveTo(0, zeroY);
+      previewCtx.lineTo(w, zeroY);
+      previewCtx.stroke();
+    }
+  }
+
+  // ---- 3D Pink slices (inside) ----
+  function updatePink3D(state, pinkN) {
+    while(pink3DGroup.children.length > 0) pink3DGroup.remove(pink3DGroup.children[0]);
+    if (pinkN <= 0) return;
+    var top = state.top, bottom = state.bottom, a = state.a, b = state.b;
+    var k = state.k, axisType = state.axisType;
+    var dx = (b - a) / pinkN;
+    for (var i = 0; i < pinkN; i++) {
+      var x0 = a + i * dx;
+      var x1 = x0 + dx;
+      var hts = getInnerHeights(top, bottom, x0, x1, 4);
+      var yTop = hts.topMin;
+      var yBot = hts.bottomMax;
+      if (yBot > yTop) { var tmp = yTop; yTop = yBot; yBot = tmp; }
+      var height = yTop - yBot;
+      if (height <= 0) continue;
+      var centerX = x0 + dx/2;
+      var centerY = (yTop + yBot)/2;
+      var boxGeo = new THREE.BoxGeometry(dx, height, 0.02);
+      var boxMat = new THREE.MeshBasicMaterial({ color: 0xf472b6, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
+      var box = new THREE.Mesh(boxGeo, boxMat);
+      if (axisType === 'vertical') {
+        box.position.set(centerX - k, centerY, 0);
+      } else {
+        box.position.set(centerX, centerY - k, 0);
+      }
+      pink3DGroup.add(box);
+    }
+  }
+
+  // ---- 3D highlight slice (washer or shell) ----
+  function createWasherSlice(innerR, outerR, angle, thickness) {
+    var segments = 64;
+    var vertices = [];
+    var indices = [];
+
+    function addArc(r, sign) {
+      var startIdx = vertices.length / 3;
+      for (var i = 0; i <= segments; i++) {
+        var a = (i / segments) * angle;
+        var x = 0;
+        var y = r * Math.cos(a);
+        var z = r * Math.sin(a);
+        vertices.push(x, y, z);
+      }
+      return startIdx;
+    }
+
+    var outerStart = addArc(outerR);
+    var innerStart = addArc(innerR);
+
+    var totalPoints = (segments+1)*2;
+    for (var i = 0; i < totalPoints; i++) {
+      var x = vertices[i*3];
+      var y = vertices[i*3+1];
+      var z = vertices[i*3+2];
+      vertices.push(x + thickness, y, z);
+    }
+
+    // Outer band
+    for (var i = 0; i < segments; i++) {
+      var a = outerStart + i;
+      var b = outerStart + i + 1;
+      var c = outerStart + totalPoints + i;
+      var d = outerStart + totalPoints + i + 1;
+      indices.push(a, b, c);
+      indices.push(b, d, c);
+    }
+    // Inner band
+    for (var i = 0; i < segments; i++) {
+      var a = innerStart + i;
+      var b = innerStart + i + 1;
+      var c = innerStart + totalPoints + i;
+      var d = innerStart + totalPoints + i + 1;
+      indices.push(a, c, b);
+      indices.push(b, c, d);
+    }
+    // Caps
+    function addCap(offset, flip) {
+      var centerIdx = vertices.length / 3;
+      vertices.push(offset, 0, 0);
+      for (var i = 0; i < segments; i++) {
+        var o0 = outerStart + i;
+        var o1 = outerStart + i + 1;
+        if (!flip) indices.push(centerIdx, o0, o1);
+        else indices.push(centerIdx, o1, o0);
+      }
+      for (var i = 0; i < segments; i++) {
+        var i0 = innerStart + i;
+        var i1 = innerStart + i + 1;
+        if (!flip) indices.push(centerIdx, i1, i0);
+        else indices.push(centerIdx, i0, i1);
+      }
+    }
+    addCap(0, false);
+    addCap(thickness, true);
+
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geo.setIndex(indices);
+    geo.computeVertexNormals();
+    return geo;
+  }
+
+  function updateHighlightSlice(state) {
+    while(highlightGroup.children.length > 0) highlightGroup.remove(highlightGroup.children[0]);
+    var blueX = state.blueX;
+    var top = state.top, bottom = state.bottom, a = state.a, b = state.b;
+    var axisType = state.axisType, k = state.k, maxAngle = state.maxAngle;
+    var yTop = top(blueX);
+    var yBot = bottom(blueX);
+    if (yBot > yTop) { var tmp = yTop; yTop = yBot; yBot = tmp; }
+    var height = yTop - yBot;
+    if (height <= 0) return;
+
+    var dx = (b - a) / 80; // slice width
+
+    if (axisType === 'vertical') {
+      var radius = Math.abs(blueX - k);
+      if (radius < 0.001) return;
+      var geo = new THREE.CylinderGeometry(radius, radius, height, 64, 1);
+      var mat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
+      var cyl = new THREE.Mesh(geo, mat);
+      cyl.position.y = (yTop + yBot) / 2;
+      var wireGeo = new THREE.EdgesGeometry(geo);
+      var wireMat = new THREE.LineBasicMaterial({ color: 0x60a5fa });
+      var wireframe = new THREE.LineSegments(wireGeo, wireMat);
+      cyl.add(wireframe);
+      highlightGroup.add(cyl);
+    } else {
+      var innerR = Math.abs(yBot - k);
+      var outerR = Math.abs(yTop - k);
+      if (outerR < 0.001) return;
+      var geo = createWasherSlice(innerR, outerR, maxAngle, dx);
+      var mat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
+      var slice = new THREE.Mesh(geo, mat);
+      slice.position.set(blueX - dx/2, 0, 0);
+      var wireGeo = new THREE.EdgesGeometry(geo);
+      var wireMat = new THREE.LineBasicMaterial({ color: 0x60a5fa });
+      var wireframe = new THREE.LineSegments(wireGeo, wireMat);
+      slice.add(wireframe);
+      highlightGroup.add(slice);
+    }
+  }
+
+  // ---- Main build function ----
   function buildScene(){
     showError('');
     var fnStr = document.getElementById('fnInput').value.trim();
@@ -584,10 +923,11 @@ window.addEventListener('load', function(){
     var bStr = document.getElementById('bInput').value.trim();
     var axisType = document.getElementById('axisType').value;
     var kStr = document.getElementById('kInput').value.trim();
-
-    var M = 80; // fixed smoothness
+    var M = 80;
     var T = 80;
     var opacity = parseInt(document.getElementById('opSlider').value,10)/100;
+    var maxAngleDeg = parseInt(document.getElementById('angleSlider').value, 10);
+    var maxAngle = maxAngleDeg * Math.PI / 180;
 
     var f1, f2, g, a, b, k;
     try{
@@ -605,7 +945,6 @@ window.addEventListener('load', function(){
       return;
     }
 
-    // Second upper curve (optional)
     var hasF2 = hnStr.trim() !== '';
     if(hasF2){
       try{
@@ -616,19 +955,12 @@ window.addEventListener('load', function(){
         showError('Second upper curve error: ' + e.message);
         return;
       }
-    } else {
-      f2 = null;
-    }
+    } else f2 = null;
 
-    // Effective outer curve: min of f1 and f2 if f2 exists, else f1
     var top;
-    if(f2){
-      top = function(x){ return Math.min(f1(x), f2(x)); };
-    } else {
-      top = f1;
-    }
+    if(f2) top = function(x){ return Math.min(f1(x), f2(x)); };
+    else top = f1;
 
-    // Inner curve determination
     var hasInner = gnStr.trim() !== '';
     if(hasInner){
       try{
@@ -642,25 +974,30 @@ window.addEventListener('load', function(){
     } else {
       if(f2){
         g = function(x){ return 0; };
-        showWarning('No lower curve provided — using y = 0. To use the axis as a boundary, type its value in the lower curve field.');
+        showWarning('No lower curve provided — using y = 0.');
       } else {
-        if(axisType === 'horizontal'){
-          g = function(x){ return k; };
-        } else {
-          g = function(x){ return 0; };
-          showWarning('Vertical axis with a single function: region is between the curve and y=0.');
-        }
+        if(axisType === 'horizontal') g = function(x){ return k; };
+        else { g = function(x){ return 0; }; showWarning('Vertical axis: region between curve and y=0.'); }
       }
     }
 
-    // Ensure top ≥ bottom
     var midX = (a+b)/2;
     if(top(midX) < g(midX)){
       var tmpFn = top; top = g; g = tmpFn;
       showWarning('Outer and inner curves were swapped so that outer ≥ inner.');
     }
 
-    // ---- clear old objects ----
+    var blueX = parseFloat(document.getElementById('blueXSlider').value);
+    if (blueX < a) blueX = a;
+    if (blueX > b) blueX = b;
+    currentState.blueX = blueX;
+    currentState.f1 = f1; currentState.f2 = f2;
+    currentState.top = top; currentState.bottom = g;
+    currentState.a = a; currentState.b = b;
+    currentState.k = k; currentState.axisType = axisType;
+    currentState.opacity = opacity; currentState.maxAngle = maxAngle;
+
+    // Clear old
     disposeMesh(surfaceMesh); surfaceMesh = null;
     disposeMesh(wireMesh); wireMesh = null;
     disposeMesh(outerCurveMesh); outerCurveMesh = null;
@@ -668,28 +1005,24 @@ window.addEventListener('load', function(){
     disposeMesh(innerCurveMesh); innerCurveMesh = null;
     disposeMesh(axisMesh); axisMesh = null;
 
-    // ---- build geometry ----
+    // Build geometry
     var loop = buildLoop(top, g, a, b, M);
-    var Tn = T;
+    var ringCount = loop.length;
+    var angleSteps = maxAngleDeg >= 360 ? T : Math.round(T * maxAngle / (2*Math.PI));
+    if (angleSteps < 2) angleSteps = 2;
+    var Tn = angleSteps;
     var positions = [];
     var indices = [];
-    var ringCount = loop.length;
-
     var along = [], rad = [];
     for(var i=0;i<ringCount;i++){
       var p = loop[i];
-      if(axisType === 'vertical'){
-        along.push(p.y);
-        rad.push(p.x - k);
-      } else {
-        along.push(p.x);
-        rad.push(p.y - k);
-      }
+      if(axisType === 'vertical'){ along.push(p.y); rad.push(p.x - k); }
+      else { along.push(p.x); rad.push(p.y - k); }
     }
 
     for(var i=0;i<ringCount;i++){
       for(var j=0;j<=Tn;j++){
-        var theta = (j/Tn) * Math.PI * 2;
+        var theta = (j/Tn) * maxAngle;
         var r = rad[i];
         var c = Math.cos(theta), s = Math.sin(theta);
         var x3, y3, z3;
@@ -718,7 +1051,6 @@ window.addEventListener('load', function(){
     geo.setIndex(indices);
     geo.computeVertexNormals();
 
-    // ---- materials & meshes ----
     var mat = new THREE.MeshStandardMaterial({
       color: 0x5eead4,
       transparent: true,
@@ -736,17 +1068,14 @@ window.addEventListener('load', function(){
     wireMesh = new THREE.LineSegments(wireGeo, wireMat);
     solidGroup.add(wireMesh);
 
-    // ---- Outer curves (amber) ----
+    // Outer curves
     var curvePtsOuter1 = [];
     for(var i=0;i<M;i++){
-      var t = i/(M-1);
-      var x = a + (b-a)*t;
+      var t2 = i/(M-1);
+      var x = a + (b-a)*t2;
       var y = f1(x);
-      if(axisType === 'vertical'){
-        curvePtsOuter1.push(new THREE.Vector3(x - k, y, 0));
-      } else {
-        curvePtsOuter1.push(new THREE.Vector3(x, y - k, 0));
-      }
+      if(axisType === 'vertical') curvePtsOuter1.push(new THREE.Vector3(x - k, y, 0));
+      else curvePtsOuter1.push(new THREE.Vector3(x, y - k, 0));
     }
     var outerCurveGeo1 = new THREE.BufferGeometry().setFromPoints(curvePtsOuter1);
     outerCurveMesh = new THREE.Line(outerCurveGeo1, new THREE.LineBasicMaterial({ color:0xf5a524 }));
@@ -755,14 +1084,11 @@ window.addEventListener('load', function(){
     if(f2){
       var curvePtsOuter2 = [];
       for(var i=0;i<M;i++){
-        var t = i/(M-1);
-        var x = a + (b-a)*t;
+        var t2 = i/(M-1);
+        var x = a + (b-a)*t2;
         var y = f2(x);
-        if(axisType === 'vertical'){
-          curvePtsOuter2.push(new THREE.Vector3(x - k, y, 0));
-        } else {
-          curvePtsOuter2.push(new THREE.Vector3(x, y - k, 0));
-        }
+        if(axisType === 'vertical') curvePtsOuter2.push(new THREE.Vector3(x - k, y, 0));
+        else curvePtsOuter2.push(new THREE.Vector3(x, y - k, 0));
       }
       var outerCurveGeo2 = new THREE.BufferGeometry().setFromPoints(curvePtsOuter2);
       outerCurve2Mesh = new THREE.Line(outerCurveGeo2, new THREE.LineBasicMaterial({ color:0xf5a524, transparent:true, opacity:0.6 }));
@@ -773,22 +1099,18 @@ window.addEventListener('load', function(){
     if(hasInner || (axisType === 'vertical' && !hasInner) || f2){
       var curvePtsInner = [];
       for(var i=0;i<M;i++){
-        var t = i/(M-1);
-        var x = a + (b-a)*t;
+        var t2 = i/(M-1);
+        var x = a + (b-a)*t2;
         var y = g(x);
-        if(axisType === 'vertical'){
-          curvePtsInner.push(new THREE.Vector3(x - k, y, 0));
-        } else {
-          curvePtsInner.push(new THREE.Vector3(x, y - k, 0));
-        }
+        if(axisType === 'vertical') curvePtsInner.push(new THREE.Vector3(x - k, y, 0));
+        else curvePtsInner.push(new THREE.Vector3(x, y - k, 0));
       }
       var innerCurveGeo = new THREE.BufferGeometry().setFromPoints(curvePtsInner);
-      var innerOpacity = 0.45;
-      innerCurveMesh = new THREE.Line(innerCurveGeo, new THREE.LineBasicMaterial({ color:0xf5a524, transparent:true, opacity:innerOpacity }));
+      innerCurveMesh = new THREE.Line(innerCurveGeo, new THREE.LineBasicMaterial({ color:0xf5a524, transparent:true, opacity:0.45 }));
       solidGroup.add(innerCurveMesh);
     }
 
-    // Axis of revolution (red dashed)
+    // Axis of revolution
     var maxAlong = Math.max.apply(null, along), minAlong = Math.min.apply(null, along);
     var span = Math.max(1, maxAlong-minAlong);
     var axisEndA, axisEndB;
@@ -804,33 +1126,28 @@ window.addEventListener('load', function(){
     axisMesh.computeLineDistances();
     solidGroup.add(axisMesh);
 
-    // ---- Position the whole group so the axis line appears at world coordinate k ----
     solidGroup.position.set(0,0,0);
-    if(axisType === 'vertical'){
-      solidGroup.position.x = k;
-    } else {
-      solidGroup.position.y = k;
-    }
+    if(axisType === 'vertical') solidGroup.position.x = k;
+    else solidGroup.position.y = k;
 
     geo.computeBoundingSphere();
     target.copy(geo.boundingSphere.center).add(solidGroup.position);
     spherical.radius = Math.max(3, geo.boundingSphere.radius * 2.6);
     grid.position.y = -0.001;
 
-    // ---- volume ----
-    var vol, method;
+    // Volume
+    var volFull, method;
     if(axisType === 'vertical'){
-      vol = simpson(function(x){
-        return 2*Math.PI*Math.abs(x-k)*(top(x)-g(x));
-      }, a, b, 2000);
+      volFull = simpson(function(x){ return 2*Math.PI*Math.abs(x-k)*(top(x)-g(x)); }, a, b, 2000);
       method = 'Shell method: 2π ∫|x−k|·[top(x)−g(x)] dx';
     } else {
-      vol = simpson(function(x){
+      volFull = simpson(function(x){
         var outer = top(x)-k, inner = g(x)-k;
         return Math.PI*(outer*outer - inner*inner);
       }, a, b, 2000);
       method = 'Washer method: π ∫[(top(x)−k)² − (g(x)−k)²] dx';
     }
+    var vol = volFull * (maxAngle / (2*Math.PI));
     document.getElementById('volOut').textContent = vol.toFixed(4);
     document.getElementById('methodOut').textContent = method;
 
@@ -839,9 +1156,15 @@ window.addEventListener('load', function(){
     document.getElementById('hudEq').textContent = 'y = ' + fnDisplay + '   on  [' + a.toFixed(2) + ', ' + b.toFixed(2) + ']';
     document.getElementById('hudAxis').textContent = 'rotated about ' + (axisType==='vertical' ? 'x = ' : 'y = ') + k;
     document.getElementById('hudAxisWorld').textContent = 'axis world position: ' + (axisType==='vertical' ? 'x' : 'y') + ' = ' + k.toFixed(4);
+
+    // Update pink 3D slices and preview
+    var pinkN = parseInt(document.getElementById('pinkNSlider').value, 10);
+    updatePink3D(currentState, pinkN);
+    updateHighlightSlice(currentState);
+    drawPreview(currentState, pinkN);
   }
 
-  // ---------------- Real-time transparency update ----------------
+  // ---------------- Slider events ----------------
   document.getElementById('opSlider').addEventListener('input', function(){
     var val = this.value/100;
     document.getElementById('opVal').textContent = val.toFixed(2);
@@ -850,9 +1173,32 @@ window.addEventListener('load', function(){
       surfaceMesh.material.depthWrite = val > 0.75;
       surfaceMesh.material.needsUpdate = true;
     }
+    currentState.opacity = val;
   });
 
-  // ---------------- UI wiring ----------------
+  document.getElementById('angleSlider').addEventListener('input', function(){
+    var deg = parseInt(this.value, 10);
+    document.getElementById('angleVal').textContent = deg + '°';
+    buildScene();
+  });
+
+  document.getElementById('blueXSlider').addEventListener('input', function(){
+    var blueX = parseFloat(this.value);
+    document.getElementById('blueXVal').textContent = blueX.toFixed(2);
+    currentState.blueX = blueX;
+    var pinkN = parseInt(document.getElementById('pinkNSlider').value, 10);
+    drawPreview(currentState, pinkN);
+    updateHighlightSlice(currentState);
+  });
+
+  document.getElementById('pinkNSlider').addEventListener('input', function(){
+    var n = parseInt(this.value, 10);
+    document.getElementById('pinkNVal').textContent = n;
+    drawPreview(currentState, n);
+    updatePink3D(currentState, n);
+  });
+
+  // ---- UI wiring ----
   function setAxisEqLabel(){
     document.getElementById('axisEqLabel').textContent = document.getElementById('axisType').value==='vertical' ? 'x =' : 'y =';
   }
@@ -863,6 +1209,7 @@ window.addEventListener('load', function(){
     if(e.key === 'Enter') buildScene();
   });
 
+  // Presets
   var presets = {
     'sin-vert': { fn:'sin(x)', hn:'', gn:'', a:'0', b:'pi', axis:'vertical', k:'-1' },
     'disk':     { fn:'x^2', hn:'', gn:'', a:'0', b:'2', axis:'horizontal', k:'0' },
@@ -886,10 +1233,25 @@ window.addEventListener('load', function(){
     });
   });
 
-  // ---------------- boot ----------------
+  // Boot
   setAxisEqLabel();
-  resize();
+  var originalBuild = buildScene;
+  buildScene = function(){
+    originalBuild();
+    var a = currentState.a, b = currentState.b;
+    var slider = document.getElementById('blueXSlider');
+    slider.min = a;
+    slider.max = b;
+    slider.step = (b - a) / 200;
+    var cur = parseFloat(slider.value);
+    if (cur < a || cur > b) slider.value = (a+b)/2;
+    document.getElementById('blueXVal').textContent = parseFloat(slider.value).toFixed(2);
+    currentState.blueX = parseFloat(slider.value);
+    updateHighlightSlice(currentState);
+    drawPreview(currentState, parseInt(document.getElementById('pinkNSlider').value));
+  };
   buildScene();
+  resize();
   animate();
 });
 </script>
