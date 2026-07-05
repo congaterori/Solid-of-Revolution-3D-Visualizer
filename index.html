@@ -406,7 +406,7 @@
     </div>
 
     <div class="hint">
-      <b>Green slider</b> moves the blue sample slice (now clearly shows the hole).<br>
+      <b>Green slider</b> moves the blue sample slice (same thickness as pink).<br>
       <b>Pink slider</b> changes number of Riemann rectangles.<br>
       <b>Grey slider</b> spins the solid (camera stays!).
     </div>
@@ -457,7 +457,7 @@ window.addEventListener('load', function(){
     f1: null, f2: null, top: null, bottom: null,
     a: 0, b: 0, k: 0, axisType: 'horizontal',
     opacity: 0.55, maxAngle: 2*Math.PI,
-    blueX: 2.5
+    blueX: 2.5, pinkN: 20
   };
 
   // ---- Extend math.js with custom functions ----
@@ -715,7 +715,7 @@ window.addEventListener('load', function(){
     previewCtx.lineWidth = 1.5;
     previewCtx.stroke();
 
-    // Blue rectangle
+    // Blue rectangle (keep fixed thin width for visibility)
     if (blueX >= a && blueX <= b) {
       var blueW = (b - a) / 50;
       var xLeft = blueX - blueW/2;
@@ -798,19 +798,21 @@ window.addEventListener('load', function(){
     }
   }
 
-  // ---- 3D highlight slice (wireframe ring for horizontal, cylinder for vertical) ----
+  // ---- 3D highlight slice (wireframe ring thickness = pink rectangle width) ----
   function updateHighlightSlice(state) {
     while(highlightGroup.children.length > 0) highlightGroup.remove(highlightGroup.children[0]);
     var blueX = state.blueX;
     var top = state.top, bottom = state.bottom, a = state.a, b = state.b;
     var axisType = state.axisType, k = state.k, maxAngle = state.maxAngle;
+    var pinkN = state.pinkN || 20;
     var yTop = top(blueX);
     var yBot = bottom(blueX);
     if (yBot > yTop) { var tmp = yTop; yTop = yBot; yBot = tmp; }
     var height = yTop - yBot;
     if (height <= 0) return;
 
-    var dx = (b - a) / 20;  // slab thickness
+    // Thickness equals one pink rectangle width
+    var dx = (b - a) / pinkN;
 
     if (axisType === 'vertical') {
       var radius = Math.abs(blueX - k);
@@ -825,7 +827,7 @@ window.addEventListener('load', function(){
       cyl.add(wireframe);
       highlightGroup.add(cyl);
     } else {
-      // horizontal axis: create wireframe ring to show the hole
+      // horizontal axis: wireframe ring with hole
       var innerR = Math.abs(yBot - k);
       var outerR = Math.abs(yTop - k);
       if (outerR < 0.001) return;
@@ -834,11 +836,9 @@ window.addEventListener('load', function(){
       var angleSteps = Math.round(segments * maxAngle / (2*Math.PI));
       if (angleSteps < 2) angleSteps = 2;
 
-      // front and back X positions
       var xFront = blueX - dx/2;
       var xBack = blueX + dx/2;
 
-      // generate points for outer and inner arcs
       function arcPoints(r, xPos) {
         var pts = [];
         for (var i = 0; i <= angleSteps; i++) {
@@ -853,22 +853,18 @@ window.addEventListener('load', function(){
       var innerFront = arcPoints(innerR, xFront);
       var innerBack = arcPoints(innerR, xBack);
 
-      // create line geometries
       function lineFromPoints(points, color) {
         var geo = new THREE.BufferGeometry().setFromPoints(points);
         return new THREE.Line(geo, new THREE.LineBasicMaterial({ color: color }));
       }
 
       var blueColor = 0x60a5fa;
-
       highlightGroup.add(lineFromPoints(outerFront, blueColor));
       highlightGroup.add(lineFromPoints(outerBack, blueColor));
       highlightGroup.add(lineFromPoints(innerFront, blueColor));
       highlightGroup.add(lineFromPoints(innerBack, blueColor));
 
-      // connect front to back at start and end
       if (maxAngle < 2*Math.PI - 0.001) {
-        // partial slice: connect the two arc ends with straight lines
         function connect(a, b) {
           var geo = new THREE.BufferGeometry().setFromPoints([a, b]);
           return new THREE.Line(geo, new THREE.LineBasicMaterial({ color: blueColor }));
@@ -878,7 +874,6 @@ window.addEventListener('load', function(){
         highlightGroup.add(connect(innerFront[0], innerBack[0]));
         highlightGroup.add(connect(innerFront[innerFront.length-1], innerBack[innerBack.length-1]));
       }
-      // for full 360°, the circles are closed; no need for extra connections
     }
   }
 
@@ -965,6 +960,7 @@ window.addEventListener('load', function(){
     currentState.a = a; currentState.b = b;
     currentState.k = k; currentState.axisType = axisType;
     currentState.opacity = opacity; currentState.maxAngle = maxAngle;
+    currentState.pinkN = parseInt(document.getElementById('pinkNSlider').value, 10);
 
     // Clear old
     disposeMesh(surfaceMesh); surfaceMesh = null;
@@ -1129,7 +1125,7 @@ window.addEventListener('load', function(){
     document.getElementById('hudAxisWorld').textContent = 'axis world position: ' + (axisType==='vertical' ? 'x' : 'y') + ' = ' + k.toFixed(4);
 
     // Update pink 3D slices and preview
-    var pinkN = parseInt(document.getElementById('pinkNSlider').value, 10);
+    var pinkN = currentState.pinkN;
     updatePink3D(currentState, pinkN);
     updateHighlightSlice(currentState);
     drawPreview(currentState, pinkN);
@@ -1157,16 +1153,17 @@ window.addEventListener('load', function(){
     var blueX = parseFloat(this.value);
     document.getElementById('blueXVal').textContent = blueX.toFixed(2);
     currentState.blueX = blueX;
-    var pinkN = parseInt(document.getElementById('pinkNSlider').value, 10);
-    drawPreview(currentState, pinkN);
+    drawPreview(currentState, currentState.pinkN);
     updateHighlightSlice(currentState);
   });
 
   document.getElementById('pinkNSlider').addEventListener('input', function(){
     var n = parseInt(this.value, 10);
     document.getElementById('pinkNVal').textContent = n;
+    currentState.pinkN = n;
     drawPreview(currentState, n);
     updatePink3D(currentState, n);
+    updateHighlightSlice(currentState);
   });
 
   // ---- UI wiring ----
@@ -1218,7 +1215,7 @@ window.addEventListener('load', function(){
     document.getElementById('blueXVal').textContent = parseFloat(slider.value).toFixed(2);
     currentState.blueX = parseFloat(slider.value);
     updateHighlightSlice(currentState);
-    drawPreview(currentState, parseInt(document.getElementById('pinkNSlider').value));
+    drawPreview(currentState, currentState.pinkN);
   };
   initialBuild();
   resize();
