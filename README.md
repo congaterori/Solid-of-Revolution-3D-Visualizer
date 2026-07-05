@@ -2,7 +2,7 @@
 
 Square Root
 
-Sqrt()
+sqrt()
 
 EX: 3*sqrt(x-1)
 
