@@ -408,7 +408,7 @@
     <div class="hint">
       <b>Green slider</b> moves the blue sample rectangle.<br>
       <b>Pink slider</b> changes number of Riemann rectangles (now fully inside).<br>
-      <b>Grey slider</b> spins the slices around the axis.
+      <b>Grey slider</b> spins the slices around the axis (camera stays!).
     </div>
   </div>
 
@@ -673,7 +673,7 @@ window.addEventListener('load', function(){
     function scaleX(x) { return 20 + (x - a) / (b - a) * (w - 40); }
     function scaleY(y) { return h - 20 - (y - yMin) / (yMax - yMin) * (h - 40); }
 
-    // Pink rectangles – use inner heights so they stay inside
+    // Pink rectangles – inside
     if (pinkN > 0) {
       var dx = (b - a) / pinkN;
       previewCtx.fillStyle = 'rgba(244, 114, 182, 0.3)';
@@ -715,7 +715,7 @@ window.addEventListener('load', function(){
     previewCtx.lineWidth = 1.5;
     previewCtx.stroke();
 
-    // Blue rectangle – uses exact left‑endpoint heights (by design)
+    // Blue rectangle
     if (blueX >= a && blueX <= b) {
       var blueW = (b - a) / 50;
       var xLeft = blueX - blueW/2;
@@ -883,7 +883,7 @@ window.addEventListener('load', function(){
     var height = yTop - yBot;
     if (height <= 0) return;
 
-    var dx = (b - a) / 80; // slice width
+    var dx = (b - a) / 80;
 
     if (axisType === 'vertical') {
       var radius = Math.abs(blueX - k);
@@ -913,8 +913,8 @@ window.addEventListener('load', function(){
     }
   }
 
-  // ---- Main build function ----
-  function buildScene(){
+  // ---- Main build function (keepCamera parameter) ----
+  function buildScene(keepCamera){
     showError('');
     var fnStr = document.getElementById('fnInput').value.trim();
     var hnStr = document.getElementById('hnInput').value.trim();
@@ -1130,9 +1130,12 @@ window.addEventListener('load', function(){
     if(axisType === 'vertical') solidGroup.position.x = k;
     else solidGroup.position.y = k;
 
-    geo.computeBoundingSphere();
-    target.copy(geo.boundingSphere.center).add(solidGroup.position);
-    spherical.radius = Math.max(3, geo.boundingSphere.radius * 2.6);
+    // Update camera target only if not keeping camera (i.e., full rebuild)
+    if (!keepCamera) {
+      geo.computeBoundingSphere();
+      target.copy(geo.boundingSphere.center).add(solidGroup.position);
+      spherical.radius = Math.max(3, geo.boundingSphere.radius * 2.6);
+    }
     grid.position.y = -0.001;
 
     // Volume
@@ -1179,7 +1182,7 @@ window.addEventListener('load', function(){
   document.getElementById('angleSlider').addEventListener('input', function(){
     var deg = parseInt(this.value, 10);
     document.getElementById('angleVal').textContent = deg + '°';
-    buildScene();
+    buildScene(true); // keep camera
   });
 
   document.getElementById('blueXSlider').addEventListener('input', function(){
@@ -1204,9 +1207,9 @@ window.addEventListener('load', function(){
   }
   document.getElementById('axisType').addEventListener('change', setAxisEqLabel);
 
-  document.getElementById('renderBtn').addEventListener('click', buildScene);
+  document.getElementById('renderBtn').addEventListener('click', function(){ buildScene(false); });
   document.getElementById('kInput').addEventListener('keydown', function(e){
-    if(e.key === 'Enter') buildScene();
+    if(e.key === 'Enter') buildScene(false);
   });
 
   // Presets
@@ -1229,15 +1232,14 @@ window.addEventListener('load', function(){
       document.getElementById('axisType').value = p.axis;
       setAxisEqLabel();
       document.getElementById('kInput').value = p.k;
-      buildScene();
+      buildScene(false);
     });
   });
 
   // Boot
   setAxisEqLabel();
-  var originalBuild = buildScene;
-  buildScene = function(){
-    originalBuild();
+  var initialBuild = function(){
+    buildScene(false); // initial build resets camera
     var a = currentState.a, b = currentState.b;
     var slider = document.getElementById('blueXSlider');
     slider.min = a;
@@ -1250,7 +1252,7 @@ window.addEventListener('load', function(){
     updateHighlightSlice(currentState);
     drawPreview(currentState, parseInt(document.getElementById('pinkNSlider').value));
   };
-  buildScene();
+  initialBuild();
   resize();
   animate();
 });
