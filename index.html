@@ -352,6 +352,16 @@
       <input type="text" id="kInput" value="-6" placeholder="value (k)">
     </div>
 
+    <!-- Visualization Method -->
+    <div class="field">
+      <label for="methodSelect">Visualization Method</label>
+      <select id="methodSelect">
+        <option value="auto">Auto</option>
+        <option value="disc">Disc / Washer</option>
+        <option value="shell">Shell</option>
+      </select>
+    </div>
+
     <button class="btn-primary" id="renderBtn">Build the solid</button>
 
     <div class="presets">
@@ -406,9 +416,9 @@
     </div>
 
     <div class="hint">
-      <b>Green slider</b> moves the blue sample slice (same thickness as pink).<br>
-      <b>Pink slider</b> changes number of Riemann rectangles.<br>
-      <b>Grey slider</b> spins the solid (camera stays!).
+      <b>Visualization Method:</b> Disc or Shell.<br>
+      Shell thickness = one pink rectangle width.<br>
+      Hollow shell shows the hole correctly.
     </div>
   </div>
 
@@ -442,34 +452,29 @@ window.addEventListener('load', function(){
   var target = new THREE.Vector3(0,0,0);
   var spherical = { radius: 8, theta: Math.PI*0.28, phi: Math.PI*0.38 };
 
-  // Groups for highlights
   var highlightGroup = new THREE.Group();
   var pink3DGroup = new THREE.Group();
   solidGroup.add(highlightGroup);
   solidGroup.add(pink3DGroup);
 
-  // 2D preview canvas
   var previewCanvas = document.getElementById('previewCanvas');
   var previewCtx = previewCanvas.getContext('2d');
 
-  // State
   var currentState = {
     f1: null, f2: null, top: null, bottom: null,
     a: 0, b: 0, k: 0, axisType: 'horizontal',
     opacity: 0.55, maxAngle: 2*Math.PI,
-    blueX: 2.5, pinkN: 20
+    blueX: 2.5, pinkN: 20,
+    vizMethod: 'auto'
   };
 
-  // ---- Extend math.js with custom functions ----
-  math.import({
-    ln: function(x) { return Math.log(x); }
-  }, { override: true });
+  math.import({ ln: function(x) { return Math.log(x); } }, { override: true });
 
   try{
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias:true, alpha:true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
   }catch(e){
-    showError('WebGL could not start in this browser: ' + e.message);
+    showError('WebGL could not start: ' + e.message);
     return;
   }
 
@@ -490,12 +495,11 @@ window.addEventListener('load', function(){
   grid.position.y = -0.001;
   scene.add(grid);
 
-  // ---------- Coordinate axes ----------
   function createAxisLine(start, end, color, arrowLength = 0.4, arrowRadius = 0.08) {
     var group = new THREE.Group();
     var dir = new THREE.Vector3().subVectors(end, start);
     var lineGeo = new THREE.BufferGeometry().setFromPoints([start, end]);
-    var line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: color, linewidth: 1 }));
+    var line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: color }));
     group.add(line);
     var coneGeo = new THREE.ConeGeometry(arrowRadius, arrowLength, 8);
     var cone = new THREE.Mesh(coneGeo, new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.4 }));
@@ -523,7 +527,6 @@ window.addEventListener('load', function(){
   }
   window.addEventListener('resize', resize);
 
-  // ---------------- Custom orbit controls ----------------
   var dragging = false, lastX=0, lastY=0;
   canvas.addEventListener('pointerdown', function(e){
     dragging = true; lastX = e.clientX; lastY = e.clientY;
@@ -561,7 +564,6 @@ window.addEventListener('load', function(){
     renderer.render(scene, camera);
   }
 
-  // ---------------- Math helpers ----------------
   function showError(msg){
     var b = document.getElementById('errorBanner');
     b.classList.remove('warning');
@@ -584,7 +586,6 @@ window.addEventListener('load', function(){
     return math.evaluate(str);
   }
 
-  // Simpson's rule
   function simpson(f, a, b, n){
     if(n % 2 === 1) n++;
     var h = (b-a)/n, sum = f(a) + f(b);
@@ -595,15 +596,12 @@ window.addEventListener('load', function(){
     return sum * h / 3;
   }
 
-  // Build closed loop
   function buildLoop(top, bottom, a, b, M){
     var pts = [];
     var wallSamples = Math.max(2, Math.round(M*0.06));
     var curveSamples = M;
-
     var ya0 = top(a), yb0 = top(b);
     var ya1 = bottom(a), yb1 = bottom(b);
-
     for(var i=0;i<wallSamples;i++){
       var t = i/(wallSamples-1);
       pts.push({x:a, y: ya1 + (ya0-ya1)*t});
@@ -632,7 +630,6 @@ window.addEventListener('load', function(){
     if(m.material) m.material.dispose();
   }
 
-  // ---- Utility: get inner-sampled heights for a subinterval ----
   function getInnerHeights(top, bottom, x0, x1, samples) {
     var topVals = [], bottomVals = [];
     for (var i = 0; i <= samples; i++) {
@@ -646,7 +643,7 @@ window.addEventListener('load', function(){
     };
   }
 
-  // ---- 2D Preview Drawing ----
+  // ---- 2D Preview ----
   function drawPreview(state, pinkN) {
     if (!previewCtx) return;
     var w = previewCanvas.width, h = previewCanvas.height;
@@ -654,6 +651,7 @@ window.addEventListener('load', function(){
     var top = state.top, bottom = state.bottom, a = state.a, b = state.b;
     var k = state.k, axisType = state.axisType;
     var blueX = state.blueX;
+    var vizMethod = state.vizMethod;
 
     var samples = 80;
     var yMin = Infinity, yMax = -Infinity;
@@ -673,7 +671,7 @@ window.addEventListener('load', function(){
     function scaleX(x) { return 20 + (x - a) / (b - a) * (w - 40); }
     function scaleY(y) { return h - 20 - (y - yMin) / (yMax - yMin) * (h - 40); }
 
-    // Pink rectangles – inside
+    // Pink rectangles
     if (pinkN > 0) {
       var dx = (b - a) / pinkN;
       previewCtx.fillStyle = 'rgba(244, 114, 182, 0.3)';
@@ -715,25 +713,44 @@ window.addEventListener('load', function(){
     previewCtx.lineWidth = 1.5;
     previewCtx.stroke();
 
-    // Blue rectangle (keep fixed thin width for visibility)
+    // Blue rectangle
     if (blueX >= a && blueX <= b) {
-      var blueW = (b - a) / 50;
-      var xLeft = blueX - blueW/2;
-      var xRight = blueX + blueW/2;
-      if (xLeft < a) xLeft = a;
-      if (xRight > b) xRight = b;
       var yTop = top(blueX);
       var yBot = bottom(blueX);
-      var sx0 = scaleX(xLeft), sx1 = scaleX(xRight);
-      var syTop = scaleY(yTop), syBot = scaleY(yBot);
-      previewCtx.fillStyle = 'rgba(96, 165, 250, 0.4)';
-      previewCtx.strokeStyle = '#60a5fa';
-      previewCtx.lineWidth = 2;
-      previewCtx.fillRect(sx0, syTop, sx1 - sx0, syBot - syTop);
-      previewCtx.strokeRect(sx0, syTop, sx1 - sx0, syBot - syTop);
+      var effectiveMethod = vizMethod;
+      if (effectiveMethod === 'auto') {
+        effectiveMethod = (axisType === 'vertical') ? 'shell' : 'disc';
+      }
+
+      if (effectiveMethod === 'disc') {
+        var blueW = (b - a) / 50;
+        var xLeft = blueX - blueW/2;
+        var xRight = blueX + blueW/2;
+        if (xLeft < a) xLeft = a;
+        if (xRight > b) xRight = b;
+        var sx0 = scaleX(xLeft), sx1 = scaleX(xRight);
+        var syTop = scaleY(yTop), syBot = scaleY(yBot);
+        previewCtx.fillStyle = 'rgba(96, 165, 250, 0.4)';
+        previewCtx.strokeStyle = '#60a5fa';
+        previewCtx.lineWidth = 2;
+        previewCtx.fillRect(sx0, syTop, sx1 - sx0, syBot - syTop);
+        previewCtx.strokeRect(sx0, syTop, sx1 - sx0, syBot - syTop);
+      } else if (effectiveMethod === 'shell') {
+        var dx = (b - a) / pinkN;
+        var xLeft = blueX;
+        var xRight = blueX + dx;
+        if (xRight > b) xRight = b;
+        var sx0 = scaleX(xLeft), sx1 = scaleX(xRight);
+        var syTop = scaleY(yTop), syBot = scaleY(yBot);
+        previewCtx.fillStyle = 'rgba(96, 165, 250, 0.3)';
+        previewCtx.strokeStyle = '#60a5fa';
+        previewCtx.lineWidth = 2;
+        previewCtx.fillRect(sx0, syTop, sx1 - sx0, syBot - syTop);
+        previewCtx.strokeRect(sx0, syTop, sx1 - sx0, syBot - syTop);
+      }
     }
 
-    // Axis (red dashed)
+    // Axis
     previewCtx.strokeStyle = '#e2685f';
     previewCtx.setLineDash([4, 4]);
     previewCtx.lineWidth = 1.5;
@@ -756,7 +773,6 @@ window.addEventListener('load', function(){
     }
     previewCtx.setLineDash([]);
 
-    // x-axis (y=0)
     previewCtx.strokeStyle = '#2f6f66';
     previewCtx.lineWidth = 1;
     var zeroY = scaleY(0);
@@ -768,7 +784,7 @@ window.addEventListener('load', function(){
     }
   }
 
-  // ---- 3D Pink slices (inside) ----
+  // ---- 3D Pink slices ----
   function updatePink3D(state, pinkN) {
     while(pink3DGroup.children.length > 0) pink3DGroup.remove(pink3DGroup.children[0]);
     if (pinkN <= 0) return;
@@ -777,8 +793,7 @@ window.addEventListener('load', function(){
     var dx = (b - a) / pinkN;
     for (var i = 0; i < pinkN; i++) {
       var x0 = a + i * dx;
-      var x1 = x0 + dx;
-      var hts = getInnerHeights(top, bottom, x0, x1, 4);
+      var hts = getInnerHeights(top, bottom, x0, x0+dx, 4);
       var yTop = hts.topMin;
       var yBot = hts.bottomMax;
       if (yBot > yTop) { var tmp = yTop; yTop = yBot; yBot = tmp; }
@@ -789,55 +804,121 @@ window.addEventListener('load', function(){
       var boxGeo = new THREE.BoxGeometry(dx, height, 0.02);
       var boxMat = new THREE.MeshBasicMaterial({ color: 0xf472b6, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
       var box = new THREE.Mesh(boxGeo, boxMat);
-      if (axisType === 'vertical') {
-        box.position.set(centerX - k, centerY, 0);
-      } else {
-        box.position.set(centerX, centerY - k, 0);
-      }
+      if (axisType === 'vertical') box.position.set(centerX - k, centerY, 0);
+      else box.position.set(centerX, centerY - k, 0);
       pink3DGroup.add(box);
     }
   }
 
-  // ---- 3D highlight slice (wireframe ring thickness = pink rectangle width) ----
+  // ---- Hollow cylindrical shell geometry ----
+  function createHollowShell(innerR, outerR, height, angle, segments) {
+    if (segments < 2) segments = 2;
+    var vertices = [];
+    var indices = [];
+    var halfH = height / 2;
+
+    // bottom ring (y = -halfH)
+    var bottomOuter = [];
+    var bottomInner = [];
+    for (var i = 0; i <= segments; i++) {
+      var a = (i / segments) * angle;
+      var cos = Math.cos(a), sin = Math.sin(a);
+      bottomOuter.push(new THREE.Vector3(outerR * cos, -halfH, outerR * sin));
+      bottomInner.push(new THREE.Vector3(innerR * cos, -halfH, innerR * sin));
+    }
+    // top ring (y = +halfH)
+    var topOuter = [];
+    var topInner = [];
+    for (var i = 0; i <= segments; i++) {
+      var a = (i / segments) * angle;
+      var cos = Math.cos(a), sin = Math.sin(a);
+      topOuter.push(new THREE.Vector3(outerR * cos, halfH, outerR * sin));
+      topInner.push(new THREE.Vector3(innerR * cos, halfH, innerR * sin));
+    }
+
+    function addVertex(v) { vertices.push(v.x, v.y, v.z); return (vertices.length/3)-1; }
+
+    var idx = {};
+    var ringLen = segments+1;
+    for (var i = 0; i < ringLen; i++) {
+      idx['bo'+i] = addVertex(bottomOuter[i]);
+      idx['bi'+i] = addVertex(bottomInner[i]);
+      idx['to'+i] = addVertex(topOuter[i]);
+      idx['ti'+i] = addVertex(topInner[i]);
+    }
+
+    // side faces
+    for (var i = 0; i < segments; i++) {
+      var bo0 = idx['bo'+i], bo1 = idx['bo'+(i+1)];
+      var to0 = idx['to'+i], to1 = idx['to'+(i+1)];
+      var bi0 = idx['bi'+i], bi1 = idx['bi'+(i+1)];
+      var ti0 = idx['ti'+i], ti1 = idx['ti'+(i+1)];
+
+      // outer wall
+      indices.push(bo0, bo1, to0);
+      indices.push(bo1, to1, to0);
+      // inner wall
+      indices.push(bi0, ti0, bi1);
+      indices.push(bi1, ti0, ti1);
+      // bottom cap
+      indices.push(bo0, bi0, bo1);
+      indices.push(bo1, bi0, bi1);
+      // top cap
+      indices.push(to0, to1, ti0);
+      indices.push(to1, ti1, ti0);
+    }
+
+    // if partial angle, add side caps
+    if (angle < 2*Math.PI - 0.001) {
+      var bof = idx['bo0'], btf = idx['to0'];
+      var bif = idx['bi0'], tif = idx['ti0'];
+      var bol = idx['bo'+segments], btl = idx['to'+segments];
+      var bil = idx['bi'+segments], til = idx['ti'+segments];
+      // front cap (i=0)
+      indices.push(bof, bif, btf);
+      indices.push(btf, bif, tif);
+      // back cap (i=segments)
+      indices.push(bol, btl, bil);
+      indices.push(btl, til, bil);
+    }
+
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geo.setIndex(indices);
+    geo.computeVertexNormals();
+    return geo;
+  }
+
+  // ---- Update highlight slice ----
   function updateHighlightSlice(state) {
     while(highlightGroup.children.length > 0) highlightGroup.remove(highlightGroup.children[0]);
     var blueX = state.blueX;
     var top = state.top, bottom = state.bottom, a = state.a, b = state.b;
     var axisType = state.axisType, k = state.k, maxAngle = state.maxAngle;
-    var pinkN = state.pinkN || 20;
+    var pinkN = state.pinkN;
     var yTop = top(blueX);
     var yBot = bottom(blueX);
     if (yBot > yTop) { var tmp = yTop; yTop = yBot; yBot = tmp; }
     var height = yTop - yBot;
     if (height <= 0) return;
 
-    // Thickness equals one pink rectangle width
-    var dx = (b - a) / pinkN;
+    var effectiveMethod = state.vizMethod;
+    if (effectiveMethod === 'auto') {
+      effectiveMethod = (axisType === 'vertical') ? 'shell' : 'disc';
+    }
 
-    if (axisType === 'vertical') {
-      var radius = Math.abs(blueX - k);
-      if (radius < 0.001) return;
-      var geo = new THREE.CylinderGeometry(radius, radius, height, 64, 1);
-      var mat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
-      var cyl = new THREE.Mesh(geo, mat);
-      cyl.position.y = (yTop + yBot) / 2;
-      var wireGeo = new THREE.EdgesGeometry(geo);
-      var wireMat = new THREE.LineBasicMaterial({ color: 0x60a5fa });
-      var wireframe = new THREE.LineSegments(wireGeo, wireMat);
-      cyl.add(wireframe);
-      highlightGroup.add(cyl);
-    } else {
-      // horizontal axis: wireframe ring with hole
+    var dx = (b - a) / pinkN;  // thickness = one pink rectangle
+
+    if (effectiveMethod === 'disc') {
+      // Washer slice (thin ring)
       var innerR = Math.abs(yBot - k);
       var outerR = Math.abs(yTop - k);
       if (outerR < 0.001) return;
-
+      var xFront = blueX - dx/2;
+      var xBack = blueX + dx/2;
       var segments = 64;
       var angleSteps = Math.round(segments * maxAngle / (2*Math.PI));
       if (angleSteps < 2) angleSteps = 2;
-
-      var xFront = blueX - dx/2;
-      var xBack = blueX + dx/2;
 
       function arcPoints(r, xPos) {
         var pts = [];
@@ -847,23 +928,19 @@ window.addEventListener('load', function(){
         }
         return pts;
       }
-
       var outerFront = arcPoints(outerR, xFront);
       var outerBack = arcPoints(outerR, xBack);
       var innerFront = arcPoints(innerR, xFront);
       var innerBack = arcPoints(innerR, xBack);
-
       function lineFromPoints(points, color) {
         var geo = new THREE.BufferGeometry().setFromPoints(points);
         return new THREE.Line(geo, new THREE.LineBasicMaterial({ color: color }));
       }
-
       var blueColor = 0x60a5fa;
       highlightGroup.add(lineFromPoints(outerFront, blueColor));
       highlightGroup.add(lineFromPoints(outerBack, blueColor));
       highlightGroup.add(lineFromPoints(innerFront, blueColor));
       highlightGroup.add(lineFromPoints(innerBack, blueColor));
-
       if (maxAngle < 2*Math.PI - 0.001) {
         function connect(a, b) {
           var geo = new THREE.BufferGeometry().setFromPoints([a, b]);
@@ -874,10 +951,43 @@ window.addEventListener('load', function(){
         highlightGroup.add(connect(innerFront[0], innerBack[0]));
         highlightGroup.add(connect(innerFront[innerFront.length-1], innerBack[innerBack.length-1]));
       }
+    } else if (effectiveMethod === 'shell') {
+      // Hollow cylindrical shell
+      var innerR = Math.abs(yBot - k);
+      var outerR = Math.abs(yTop - k);
+      if (outerR < 0.001) return;
+      var segments = 64;
+      var angleSteps = Math.round(segments * maxAngle / (2*Math.PI));
+      if (angleSteps < 2) angleSteps = 2;
+      if (axisType === 'vertical') {
+        // vertical shell: ring in XZ, height along Y
+        var geo = createHollowShell(innerR, outerR, height, maxAngle, angleSteps);
+        var mat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
+        var shell = new THREE.Mesh(geo, mat);
+        shell.position.y = (yTop + yBot) / 2;
+        var wireGeo = new THREE.EdgesGeometry(geo);
+        var wireMat = new THREE.LineBasicMaterial({ color: 0x60a5fa });
+        var wireframe = new THREE.LineSegments(wireGeo, wireMat);
+        shell.add(wireframe);
+        highlightGroup.add(shell);
+      } else {
+        // horizontal shell: ring in YZ, extruded along X (length = dx)
+        // We'll create a hollow cylinder aligned with X by rotating the vertical shell by -90° around Z
+        var geo = createHollowShell(innerR, outerR, dx, maxAngle, angleSteps); // height = dx
+        var mat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
+        var shell = new THREE.Mesh(geo, mat);
+        shell.rotation.z = -Math.PI/2; // lay it along X
+        shell.position.set(blueX + dx/2, 0, 0);
+        var wireGeo = new THREE.EdgesGeometry(geo);
+        var wireMat = new THREE.LineBasicMaterial({ color: 0x60a5fa });
+        var wireframe = new THREE.LineSegments(wireGeo, wireMat);
+        shell.add(wireframe);
+        highlightGroup.add(shell);
+      }
     }
   }
 
-  // ---- Main build function (keepCamera parameter) ----
+  // ---- Main build ----
   function buildScene(keepCamera){
     showError('');
     var fnStr = document.getElementById('fnInput').value.trim();
@@ -887,6 +997,7 @@ window.addEventListener('load', function(){
     var bStr = document.getElementById('bInput').value.trim();
     var axisType = document.getElementById('axisType').value;
     var kStr = document.getElementById('kInput').value.trim();
+    var vizMethod = document.getElementById('methodSelect').value;
     var M = 80;
     var T = 80;
     var opacity = parseInt(document.getElementById('opSlider').value,10)/100;
@@ -899,11 +1010,11 @@ window.addEventListener('load', function(){
       a = evalExpr(aStr);
       b = evalExpr(bStr);
       k = evalExpr(kStr);
-      if(typeof a !== 'number' || typeof b !== 'number' || typeof k !== 'number') throw new Error('bounds or axis value must evaluate to numbers');
-      if(a === b) throw new Error('the interval needs two different endpoints');
+      if(typeof a !== 'number' || typeof b !== 'number' || typeof k !== 'number') throw new Error('bounds/axis must be numbers');
+      if(a === b) throw new Error('interval endpoints must differ');
       if(a > b){ var tmp=a; a=b; b=tmp; }
       var testVal = f1((a+b)/2);
-      if(typeof testVal !== 'number' || isNaN(testVal)) throw new Error('f₁(x) did not evaluate to a number on the interval');
+      if(typeof testVal !== 'number' || isNaN(testVal)) throw new Error('f₁(x) invalid');
     }catch(e){
       showError('Could not parse input: ' + e.message);
       return;
@@ -938,7 +1049,7 @@ window.addEventListener('load', function(){
     } else {
       if(f2){
         g = function(x){ return 0; };
-        showWarning('No lower curve provided — using y = 0.');
+        showWarning('No lower curve — using y=0.');
       } else {
         if(axisType === 'horizontal') g = function(x){ return k; };
         else { g = function(x){ return 0; }; showWarning('Vertical axis: region between curve and y=0.'); }
@@ -948,7 +1059,7 @@ window.addEventListener('load', function(){
     var midX = (a+b)/2;
     if(top(midX) < g(midX)){
       var tmpFn = top; top = g; g = tmpFn;
-      showWarning('Outer and inner curves were swapped so that outer ≥ inner.');
+      showWarning('Swapped so outer ≥ inner.');
     }
 
     var blueX = parseFloat(document.getElementById('blueXSlider').value);
@@ -961,8 +1072,8 @@ window.addEventListener('load', function(){
     currentState.k = k; currentState.axisType = axisType;
     currentState.opacity = opacity; currentState.maxAngle = maxAngle;
     currentState.pinkN = parseInt(document.getElementById('pinkNSlider').value, 10);
+    currentState.vizMethod = vizMethod;
 
-    // Clear old
     disposeMesh(surfaceMesh); surfaceMesh = null;
     disposeMesh(wireMesh); wireMesh = null;
     disposeMesh(outerCurveMesh); outerCurveMesh = null;
@@ -970,7 +1081,6 @@ window.addEventListener('load', function(){
     disposeMesh(innerCurveMesh); innerCurveMesh = null;
     disposeMesh(axisMesh); axisMesh = null;
 
-    // Build geometry
     var loop = buildLoop(top, g, a, b, M);
     var ringCount = loop.length;
     var angleSteps = maxAngleDeg >= 360 ? T : Math.round(T * maxAngle / (2*Math.PI));
@@ -1060,7 +1170,6 @@ window.addEventListener('load', function(){
       solidGroup.add(outerCurve2Mesh);
     }
 
-    // Inner curve
     if(hasInner || (axisType === 'vertical' && !hasInner) || f2){
       var curvePtsInner = [];
       for(var i=0;i<M;i++){
@@ -1075,7 +1184,6 @@ window.addEventListener('load', function(){
       solidGroup.add(innerCurveMesh);
     }
 
-    // Axis of revolution
     var maxAlong = Math.max.apply(null, along), minAlong = Math.min.apply(null, along);
     var span = Math.max(1, maxAlong-minAlong);
     var axisEndA, axisEndB;
@@ -1102,7 +1210,6 @@ window.addEventListener('load', function(){
     }
     grid.position.y = -0.001;
 
-    // Volume
     var volFull, method;
     if(axisType === 'vertical'){
       volFull = simpson(function(x){ return 2*Math.PI*Math.abs(x-k)*(top(x)-g(x)); }, a, b, 2000);
@@ -1124,14 +1231,12 @@ window.addEventListener('load', function(){
     document.getElementById('hudAxis').textContent = 'rotated about ' + (axisType==='vertical' ? 'x = ' : 'y = ') + k;
     document.getElementById('hudAxisWorld').textContent = 'axis world position: ' + (axisType==='vertical' ? 'x' : 'y') + ' = ' + k.toFixed(4);
 
-    // Update pink 3D slices and preview
-    var pinkN = currentState.pinkN;
-    updatePink3D(currentState, pinkN);
+    updatePink3D(currentState, currentState.pinkN);
     updateHighlightSlice(currentState);
-    drawPreview(currentState, pinkN);
+    drawPreview(currentState, currentState.pinkN);
   }
 
-  // ---------------- Slider events ----------------
+  // ---- Slider events ----
   document.getElementById('opSlider').addEventListener('input', function(){
     var val = this.value/100;
     document.getElementById('opVal').textContent = val.toFixed(2);
@@ -1146,7 +1251,7 @@ window.addEventListener('load', function(){
   document.getElementById('angleSlider').addEventListener('input', function(){
     var deg = parseInt(this.value, 10);
     document.getElementById('angleVal').textContent = deg + '°';
-    buildScene(true); // keep camera
+    buildScene(true);
   });
 
   document.getElementById('blueXSlider').addEventListener('input', function(){
@@ -1166,7 +1271,12 @@ window.addEventListener('load', function(){
     updateHighlightSlice(currentState);
   });
 
-  // ---- UI wiring ----
+  document.getElementById('methodSelect').addEventListener('change', function(){
+    currentState.vizMethod = this.value;
+    drawPreview(currentState, currentState.pinkN);
+    updateHighlightSlice(currentState);
+  });
+
   function setAxisEqLabel(){
     document.getElementById('axisEqLabel').textContent = document.getElementById('axisType').value==='vertical' ? 'x =' : 'y =';
   }
@@ -1177,7 +1287,6 @@ window.addEventListener('load', function(){
     if(e.key === 'Enter') buildScene(false);
   });
 
-  // Presets
   var presets = {
     'sin-vert': { fn:'sin(x)', hn:'', gn:'', a:'0', b:'pi', axis:'vertical', k:'-1' },
     'disk':     { fn:'x^2', hn:'', gn:'', a:'0', b:'2', axis:'horizontal', k:'0' },
@@ -1201,7 +1310,6 @@ window.addEventListener('load', function(){
     });
   });
 
-  // Boot
   setAxisEqLabel();
   var initialBuild = function(){
     buildScene(false);
