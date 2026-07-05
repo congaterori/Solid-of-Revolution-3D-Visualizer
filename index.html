@@ -406,9 +406,9 @@
     </div>
 
     <div class="hint">
-      <b>Green slider</b> moves the blue sample rectangle.<br>
-      <b>Pink slider</b> changes number of Riemann rectangles (now fully inside).<br>
-      <b>Grey slider</b> spins the slices around the axis (camera stays!).
+      <b>Green slider</b> moves the blue sample slice (now clearly shows the hole).<br>
+      <b>Pink slider</b> changes number of Riemann rectangles.<br>
+      <b>Grey slider</b> spins the solid (camera stays!).
     </div>
   </div>
 
@@ -798,80 +798,7 @@ window.addEventListener('load', function(){
     }
   }
 
-  // ---- 3D highlight slice (washer or shell) ----
-  function createWasherSlice(innerR, outerR, angle, thickness) {
-    var segments = 64;
-    var vertices = [];
-    var indices = [];
-
-    function addArc(r, sign) {
-      var startIdx = vertices.length / 3;
-      for (var i = 0; i <= segments; i++) {
-        var a = (i / segments) * angle;
-        var x = 0;
-        var y = r * Math.cos(a);
-        var z = r * Math.sin(a);
-        vertices.push(x, y, z);
-      }
-      return startIdx;
-    }
-
-    var outerStart = addArc(outerR);
-    var innerStart = addArc(innerR);
-
-    var totalPoints = (segments+1)*2;
-    for (var i = 0; i < totalPoints; i++) {
-      var x = vertices[i*3];
-      var y = vertices[i*3+1];
-      var z = vertices[i*3+2];
-      vertices.push(x + thickness, y, z);
-    }
-
-    // Outer band
-    for (var i = 0; i < segments; i++) {
-      var a = outerStart + i;
-      var b = outerStart + i + 1;
-      var c = outerStart + totalPoints + i;
-      var d = outerStart + totalPoints + i + 1;
-      indices.push(a, b, c);
-      indices.push(b, d, c);
-    }
-    // Inner band
-    for (var i = 0; i < segments; i++) {
-      var a = innerStart + i;
-      var b = innerStart + i + 1;
-      var c = innerStart + totalPoints + i;
-      var d = innerStart + totalPoints + i + 1;
-      indices.push(a, c, b);
-      indices.push(b, c, d);
-    }
-    // Caps
-    function addCap(offset, flip) {
-      var centerIdx = vertices.length / 3;
-      vertices.push(offset, 0, 0);
-      for (var i = 0; i < segments; i++) {
-        var o0 = outerStart + i;
-        var o1 = outerStart + i + 1;
-        if (!flip) indices.push(centerIdx, o0, o1);
-        else indices.push(centerIdx, o1, o0);
-      }
-      for (var i = 0; i < segments; i++) {
-        var i0 = innerStart + i;
-        var i1 = innerStart + i + 1;
-        if (!flip) indices.push(centerIdx, i1, i0);
-        else indices.push(centerIdx, i0, i1);
-      }
-    }
-    addCap(0, false);
-    addCap(thickness, true);
-
-    var geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    geo.setIndex(indices);
-    geo.computeVertexNormals();
-    return geo;
-  }
-
+  // ---- 3D highlight slice (wireframe ring for horizontal, cylinder for vertical) ----
   function updateHighlightSlice(state) {
     while(highlightGroup.children.length > 0) highlightGroup.remove(highlightGroup.children[0]);
     var blueX = state.blueX;
@@ -883,13 +810,13 @@ window.addEventListener('load', function(){
     var height = yTop - yBot;
     if (height <= 0) return;
 
-    var dx = (b - a) / 80;
+    var dx = (b - a) / 20;  // slab thickness
 
     if (axisType === 'vertical') {
       var radius = Math.abs(blueX - k);
       if (radius < 0.001) return;
       var geo = new THREE.CylinderGeometry(radius, radius, height, 64, 1);
-      var mat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
+      var mat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
       var cyl = new THREE.Mesh(geo, mat);
       cyl.position.y = (yTop + yBot) / 2;
       var wireGeo = new THREE.EdgesGeometry(geo);
@@ -898,18 +825,60 @@ window.addEventListener('load', function(){
       cyl.add(wireframe);
       highlightGroup.add(cyl);
     } else {
+      // horizontal axis: create wireframe ring to show the hole
       var innerR = Math.abs(yBot - k);
       var outerR = Math.abs(yTop - k);
       if (outerR < 0.001) return;
-      var geo = createWasherSlice(innerR, outerR, maxAngle, dx);
-      var mat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
-      var slice = new THREE.Mesh(geo, mat);
-      slice.position.set(blueX - dx/2, 0, 0);
-      var wireGeo = new THREE.EdgesGeometry(geo);
-      var wireMat = new THREE.LineBasicMaterial({ color: 0x60a5fa });
-      var wireframe = new THREE.LineSegments(wireGeo, wireMat);
-      slice.add(wireframe);
-      highlightGroup.add(slice);
+
+      var segments = 64;
+      var angleSteps = Math.round(segments * maxAngle / (2*Math.PI));
+      if (angleSteps < 2) angleSteps = 2;
+
+      // front and back X positions
+      var xFront = blueX - dx/2;
+      var xBack = blueX + dx/2;
+
+      // generate points for outer and inner arcs
+      function arcPoints(r, xPos) {
+        var pts = [];
+        for (var i = 0; i <= angleSteps; i++) {
+          var a = (i / angleSteps) * maxAngle;
+          pts.push(new THREE.Vector3(xPos, r * Math.cos(a), r * Math.sin(a)));
+        }
+        return pts;
+      }
+
+      var outerFront = arcPoints(outerR, xFront);
+      var outerBack = arcPoints(outerR, xBack);
+      var innerFront = arcPoints(innerR, xFront);
+      var innerBack = arcPoints(innerR, xBack);
+
+      // create line geometries
+      function lineFromPoints(points, color) {
+        var geo = new THREE.BufferGeometry().setFromPoints(points);
+        return new THREE.Line(geo, new THREE.LineBasicMaterial({ color: color }));
+      }
+
+      var blueColor = 0x60a5fa;
+
+      highlightGroup.add(lineFromPoints(outerFront, blueColor));
+      highlightGroup.add(lineFromPoints(outerBack, blueColor));
+      highlightGroup.add(lineFromPoints(innerFront, blueColor));
+      highlightGroup.add(lineFromPoints(innerBack, blueColor));
+
+      // connect front to back at start and end
+      if (maxAngle < 2*Math.PI - 0.001) {
+        // partial slice: connect the two arc ends with straight lines
+        function connect(a, b) {
+          var geo = new THREE.BufferGeometry().setFromPoints([a, b]);
+          return new THREE.Line(geo, new THREE.LineBasicMaterial({ color: blueColor }));
+        }
+        highlightGroup.add(connect(outerFront[0], outerBack[0]));
+        highlightGroup.add(connect(outerFront[outerFront.length-1], outerBack[outerBack.length-1]));
+        highlightGroup.add(connect(innerFront[0], innerBack[0]));
+        highlightGroup.add(connect(innerFront[innerFront.length-1], innerBack[innerBack.length-1]));
+      }
+      // for full 360°, the circles are closed; no need for extra connections
     }
   }
 
@@ -1130,7 +1099,6 @@ window.addEventListener('load', function(){
     if(axisType === 'vertical') solidGroup.position.x = k;
     else solidGroup.position.y = k;
 
-    // Update camera target only if not keeping camera (i.e., full rebuild)
     if (!keepCamera) {
       geo.computeBoundingSphere();
       target.copy(geo.boundingSphere.center).add(solidGroup.position);
@@ -1239,7 +1207,7 @@ window.addEventListener('load', function(){
   // Boot
   setAxisEqLabel();
   var initialBuild = function(){
-    buildScene(false); // initial build resets camera
+    buildScene(false);
     var a = currentState.a, b = currentState.b;
     var slider = document.getElementById('blueXSlider');
     slider.min = a;
