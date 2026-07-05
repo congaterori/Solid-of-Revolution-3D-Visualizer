@@ -356,7 +356,7 @@
       <div class="line"><span class="k">Method</span><span class="v" id="methodOut">—</span></div>
     </div>
 
-    <div class="hint">
+<div class="hint">
       Function syntax: <b>sin(x)</b>, <b>cos(x)</b>, <b>ln(x)</b>, <b>sqrt(x)</b>, <b>e^x</b>, <b>(sin(x))^(1/2)</b>, <b>pi</b>.<br>
       Use <b>^</b> for powers and <b>*</b> for multiplication.<br>
       <br>
@@ -366,9 +366,10 @@
       The grey grid sits at <b>y = 0</b>. The red dashed line is the revolution axis.<br>
       Coordinate axes: <span style="color:#ff5555">x</span>, <span style="color:#55ff55">y</span>, <span style="color:#5555ff">z</span>.
       <br><br>
-      <!-- Added GitHub Link Below -->
-      View the source code on <a href="https://github.com/congaterori/Solid-of-Revolution-3D-Visualizer" target="_blank" style="color: var(--teal); text-decoration: underline;">https://github.com/congaterori/Solid-of-Revolution-3D-Visualizer</a>.
+      <!-- Added onclick handler to prevent Three.js pointer interception -->
+      View the source code on <a href="https://github.com/congaterori/Solid-of-Revolution-3D-Visualizer" target="_blank" onclick="event.stopPropagation();" style="color: var(--teal); text-decoration: underline;">GitHub</a>.
     </div>
+  </div> <!-- This closes .panel. NOW they are properly separated! -->
 
   <div class="viewport">
     <canvas id="glcanvas"></canvas>
@@ -385,7 +386,7 @@
       <span><span class="dot" style="background:var(--rose)"></span>axis of revolution</span>
     </div>
   </div>
-</div>
+</div> <!-- This closes .app -->
 
 <script>
 window.addEventListener('load', function(){
