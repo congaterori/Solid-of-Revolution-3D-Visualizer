@@ -6,364 +6,66 @@
 <title>Solid of Revolution — 3D Visualizer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.2/math.min.js">
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.2/math.min.js"></script>
 <style>
-  :root{
-    --ink:#0d1117;
-    --panel:#12181f;
-    --panel-line:#232c36;
-    --chalk:#e9edf1;
-    --chalk-dim:#8b97a4;
-    --teal:#5eead4;
-    --teal-dim:#2f6f66;
-    --amber:#f5a524;
-    --rose:#e2685f;
-    --green:#4ade80;
-    --blue:#60a5fa;
-    --pink:#f472b6;
-  }
+  :root{ --ink:#0d1117; --panel:#12181f; --panel-line:#232c36; --chalk:#e9edf1; --chalk-dim:#8b97a4; --teal:#5eead4; --teal-dim:#2f6f66; --amber:#f5a524; --rose:#e2685f; --green:#4ade80; --blue:#60a5fa; --pink:#f472b6; }
   *{box-sizing:border-box;}
   html,body{height:100%;}
-  body{
-    margin:0;
-    background:var(--ink);
-    color:var(--chalk);
-    font-family:'Inter',sans-serif;
-    display:flex;
-    overflow:hidden;
-  }
-  .app{
-    display:flex;
-    width:100%;
-    height:100vh;
-  }
-  /* ---------- Control panel ---------- */
-  .panel{
-    width:370px;
-    min-width:370px;
-    background:var(--panel);
-    border-right:1px solid var(--panel-line);
-    padding:28px 24px;
-    overflow-y:auto;
-    display:flex;
-    flex-direction:column;
-    gap:18px;
-  }
-  .brand{
-    display:flex;
-    flex-direction:column;
-    gap:2px;
-    margin-bottom:4px;
-  }
-  .brand .eyebrow{
-    font-family:'JetBrains Mono',monospace;
-    font-size:11px;
-    letter-spacing:0.14em;
-    text-transform:uppercase;
-    color:var(--teal);
-  }
-  .brand h1{
-    font-family:'Fraunces',serif;
-    font-weight:600;
-    font-size:22px;
-    margin:2px 0 0 0;
-    line-height:1.15;
-  }
-  .field{
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-  }
-  .field label{
-    font-size:12px;
-    color:var(--chalk-dim);
-    font-weight:500;
-    letter-spacing:0.01em;
-  }
-  .row{
-    display:flex;
-    gap:10px;
-  }
-  .row .field{flex:1;}
-  input[type="text"], select{
-    background:#0a0e13;
-    border:1px solid var(--panel-line);
-    color:var(--chalk);
-    font-family:'JetBrains Mono',monospace;
-    font-size:14px;
-    padding:9px 10px;
-    border-radius:6px;
-    outline:none;
-    width:100%;
-    transition:border-color .15s ease;
-  }
-  input[type="text"]:focus, select:focus{
-    border-color:var(--teal-dim);
-  }
-  select{
-    font-family:'Inter',sans-serif;
-    font-size:13px;
-    appearance:none;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%238b97a4'/></svg>");
-    background-repeat:no-repeat;
-    background-position:right 10px center;
-    padding-right:28px;
-  }
-  .axis-line{
-    display:flex;
-    align-items:center;
-    gap:8px;
-  }
-  .axis-line .eq{
-    font-family:'JetBrains Mono',monospace;
-    color:var(--chalk-dim);
-    font-size:14px;
-  }
-  .divider{
-    height:1px;
-    background:var(--panel-line);
-    margin:2px 0;
-  }
-  button{
-    font-family:'Inter',sans-serif;
-    font-weight:600;
-    font-size:13.5px;
-    border:none;
-    border-radius:6px;
-    padding:11px 14px;
-    cursor:pointer;
-    transition:transform .08s ease, opacity .15s ease;
-  }
-  button:active{transform:scale(0.98);}
-  .btn-primary{
-    background:var(--teal);
-    color:#062824;
-  }
-  .btn-primary:hover{opacity:0.92;}
-  .presets{
-    display:flex;
-    flex-wrap:wrap;
-    gap:6px;
-  }
-  .preset-btn{
-    background:transparent;
-    border:1px solid var(--panel-line);
-    color:var(--chalk-dim);
-    font-size:11.5px;
-    font-weight:500;
-    padding:6px 10px;
-    border-radius:20px;
-  }
-  .preset-btn:hover{
-    border-color:var(--teal-dim);
-    color:var(--chalk);
-  }
-  .slider-field{
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-  }
-  .slider-label-row{
-    display:flex;
-    justify-content:space-between;
-    font-size:12px;
-    color:var(--chalk-dim);
-  }
-  .slider-label-row span.val{
-    font-family:'JetBrains Mono',monospace;
-    color:var(--chalk);
-  }
-  input[type="range"]{
-    -webkit-appearance:none;
-    width:100%;
-    height:3px;
-    background:var(--panel-line);
-    border-radius:2px;
-  }
-  input[type="range"]::-webkit-slider-thumb{
-    -webkit-appearance:none;
-    width:14px;
-    height:14px;
-    border-radius:50%;
-    background:var(--teal);
-    cursor:pointer;
-    border:2px solid var(--ink);
-  }
-  input[type="range"].green-slider::-webkit-slider-thumb{
-    background:var(--green);
-  }
-  input[type="range"].pink-slider::-webkit-slider-thumb{
-    background:var(--pink);
-  }
-  input[type="range"].grey-slider::-webkit-slider-thumb{
-    background:#9ca3af;
-  }
-  .readout{
-    background:#0a0e13;
-    border:1px solid var(--panel-line);
-    border-radius:8px;
-    padding:16px;
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-  }
-  .readout .line{
-    display:flex;
-    justify-content:space-between;
-    align-items:baseline;
-    font-size:13px;
-  }
-  .readout .line .k{color:var(--chalk-dim);}
-  .readout .line .v{
-    font-family:'JetBrains Mono',monospace;
-    font-size:14px;
-    color:var(--teal);
-  }
-  .error-banner{
-    background:rgba(226,104,95,0.12);
-    border:1px solid rgba(226,104,95,0.4);
-    color:var(--rose);
-    font-size:12.5px;
-    padding:10px 12px;
-    border-radius:6px;
-    display:none;
-    line-height:1.4;
-  }
-  .error-banner.warning{
-    background:rgba(245,165,36,0.12);
-    border:1px solid rgba(245,165,36,0.4);
-    color:var(--amber);
-  }
-  .hint{
-    font-size:11.5px;
-    color:var(--chalk-dim);
-    line-height:1.5;
-  }
-  /* ---------- 2D Preview canvas ---------- */
-  .preview-canvas{
-    background:#0a0e13;
-    border:1px solid var(--panel-line);
-    border-radius:8px;
-    width:100%;
-    height:150px;
-    display:block;
-  }
-  /* ---------- Viewport ---------- */
-  .viewport{
-    position:relative;
-    flex:1;
-    height:100vh;
-  }
-  canvas{display:block; width:100%; height:100%;}
-  .viewport-hud{
-    position:absolute;
-    top:20px;
-    left:24px;
-    font-family:'JetBrains Mono',monospace;
-    font-size:11px;
-    color:var(--chalk-dim);
-    letter-spacing:0.02em;
-    pointer-events:none;
-  }
-  .viewport-hud .eq-label{
-    color:var(--chalk);
-    font-size:13px;
-    margin-bottom:4px;
-  }
-  .controls-hint{
-    position:absolute;
-    bottom:20px;
-    left:24px;
-    font-size:11px;
-    color:var(--chalk-dim);
-    font-family:'JetBrains Mono',monospace;
-    pointer-events:none;
-  }
-  .legend{
-    position:absolute;
-    bottom:20px;
-    right:24px;
-    display:flex;
-    gap:16px;
-    font-size:11px;
-    color:var(--chalk-dim);
-    font-family:'JetBrains Mono',monospace;
-    pointer-events:none;
-  }
-  .legend .dot{
-    display:inline-block;
-    width:8px;
-    height:8px;
-    border-radius:50%;
-    margin-right:6px;
-    vertical-align:middle;
-  }
-  ::-webkit-scrollbar{width:8px;}
-  ::-webkit-scrollbar-track{background:transparent;}
-  ::-webkit-scrollbar-thumb{background:var(--panel-line); border-radius:4px;}
+  body{ margin:0; background:var(--ink); color:var(--chalk); font-family:'Inter',sans-serif; display:flex; overflow:hidden; }
+  .app{ display:flex; width:100%; height:100vh; }
+  .panel{ width:370px; min-width:370px; background:var(--panel); border-right:1px solid var(--panel-line); padding:28px 24px; overflow-y:auto; display:flex; flex-direction:column; gap:18px; }
+  .brand .eyebrow{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--teal); }
+  .brand h1{ font-family:'Fraunces',serif; font-weight:600; font-size:22px; margin:2px 0 0 0; line-height:1.15; }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field label{ font-size:12px; color:var(--chalk-dim); font-weight:500; }
+  .row{ display:flex; gap:10px; } .row .field{ flex:1; }
+  input[type="text"], select{ background:#0a0e13; border:1px solid var(--panel-line); color:var(--chalk); font-family:'JetBrains Mono',monospace; font-size:14px; padding:9px 10px; border-radius:6px; outline:none; width:100%; }
+  select{ font-family:'Inter',sans-serif; font-size:13px; appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%238b97a4'/></svg>"); background-repeat:no-repeat; background-position:right 10px center; padding-right:28px; }
+  .axis-line{ display:flex; align-items:center; gap:8px; } .axis-line .eq{ font-family:'JetBrains Mono',monospace; color:var(--chalk-dim); }
+  .divider{ height:1px; background:var(--panel-line); margin:2px 0; }
+  button{ font-family:'Inter',sans-serif; font-weight:600; font-size:13.5px; border:none; border-radius:6px; padding:11px 14px; cursor:pointer; }
+  .btn-primary{ background:var(--teal); color:#062824; } .btn-primary:hover{ opacity:0.92; }
+  .presets{ display:flex; flex-wrap:wrap; gap:6px; }
+  .preset-btn{ background:transparent; border:1px solid var(--panel-line); color:var(--chalk-dim); font-size:11.5px; font-weight:500; padding:6px 10px; border-radius:20px; }
+  .preset-btn:hover{ border-color:var(--teal-dim); color:var(--chalk); }
+  .slider-field{ display:flex; flex-direction:column; gap:6px; }
+  .slider-label-row{ display:flex; justify-content:space-between; font-size:12px; color:var(--chalk-dim); }
+  .slider-label-row span.val{ font-family:'JetBrains Mono',monospace; color:var(--chalk); }
+  input[type="range"]{ -webkit-appearance:none; width:100%; height:3px; background:var(--panel-line); border-radius:2px; }
+  input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--teal); cursor:pointer; border:2px solid var(--ink); }
+  .green-slider::-webkit-slider-thumb{ background:var(--green); }
+  .pink-slider::-webkit-slider-thumb{ background:var(--pink); }
+  .grey-slider::-webkit-slider-thumb{ background:#9ca3af; }
+  .readout{ background:#0a0e13; border:1px solid var(--panel-line); border-radius:8px; padding:16px; display:flex; flex-direction:column; gap:10px; }
+  .readout .line{ display:flex; justify-content:space-between; align-items:baseline; font-size:13px; }
+  .readout .line .k{ color:var(--chalk-dim); } .readout .line .v{ font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--teal); }
+  .error-banner{ background:rgba(226,104,95,0.12); border:1px solid rgba(226,104,95,0.4); color:var(--rose); font-size:12.5px; padding:10px 12px; border-radius:6px; display:none; }
+  .error-banner.warning{ background:rgba(245,165,36,0.12); border:1px solid rgba(245,165,36,0.4); color:var(--amber); }
+  .hint{ font-size:11.5px; color:var(--chalk-dim); line-height:1.5; }
+  .preview-canvas{ background:#0a0e13; border:1px solid var(--panel-line); border-radius:8px; width:100%; height:150px; }
+  .viewport{ position:relative; flex:1; height:100vh; }
+  canvas{ display:block; width:100%; height:100%; }
+  .viewport-hud{ position:absolute; top:20px; left:24px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--chalk-dim); pointer-events:none; }
+  .viewport-hud .eq-label{ color:var(--chalk); font-size:13px; margin-bottom:4px; }
+  .controls-hint{ position:absolute; bottom:20px; left:24px; font-size:11px; color:var(--chalk-dim); font-family:'JetBrains Mono',monospace; }
+  .legend{ position:absolute; bottom:20px; right:24px; display:flex; gap:16px; font-size:11px; color:var(--chalk-dim); font-family:'JetBrains Mono',monospace; }
+  .legend .dot{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:middle; }
 </style>
 </head>
 <body>
 <div class="app">
   <div class="panel">
-    <div class="brand">
-      <span class="eyebrow">Solids of Revolution</span>
-      <h1>Rotate a region, see the solid</h1>
-    </div>
-
-    <div class="field">
-      <label for="fnInput">f₁(x) — upper curve 1</label>
-      <input type="text" id="fnInput" value="3*sqrt(x-1)">
-    </div>
-    <div class="field">
-      <label for="hnInput">f₂(x) — upper curve 2 (optional)</label>
-      <input type="text" id="hnInput" placeholder="leave empty if not needed">
-    </div>
-    <div class="field">
-      <label for="gnInput">g(x) — lower curve</label>
-      <input type="text" id="gnInput" value="0">
-    </div>
-
-    <div class="row">
-      <div class="field">
-        <label for="aInput">from x =</label>
-        <input type="text" id="aInput" value="1">
-      </div>
-      <div class="field">
-        <label for="bInput">to x =</label>
-        <input type="text" id="bInput" value="4">
-      </div>
-    </div>
-
+    <div class="brand"><span class="eyebrow">Solids of Revolution</span><h1>Rotate a region, see the solid</h1></div>
+    <div class="field"><label for="fnInput">f₁(x) — upper curve 1</label><input type="text" id="fnInput" value="3*sqrt(x-1)"></div>
+    <div class="field"><label for="hnInput">f₂(x) — upper curve 2 (optional)</label><input type="text" id="hnInput" placeholder="leave empty if not needed"></div>
+    <div class="field"><label for="gnInput">g(x) — lower curve</label><input type="text" id="gnInput" value="0"></div>
+    <div class="row"><div class="field"><label for="aInput">from x =</label><input type="text" id="aInput" value="1"></div><div class="field"><label for="bInput">to x =</label><input type="text" id="bInput" value="4"></div></div>
     <div class="divider"></div>
-
-    <div class="field">
-      <label for="axisType">Axis of revolution</label>
-      <select id="axisType">
-        <option value="vertical">a vertical line — x =</option>
-        <option value="horizontal" selected>a horizontal line — y =</option>
-      </select>
-    </div>
-    <div class="field axis-line">
-      <span class="eq" id="axisEqLabel">y =</span>
-      <input type="text" id="kInput" value="-6" placeholder="value (k)">
-    </div>
-
-    <!-- Visualization Method -->
-    <div class="field">
-      <label for="methodSelect">Visualization Method</label>
-      <select id="methodSelect">
-        <option value="auto">Auto</option>
-        <option value="disc">Disc / Washer</option>
-        <option value="shell">Shell</option>
-      </select>
-    </div>
-
+    <div class="field"><label for="axisType">Axis of revolution</label><select id="axisType"><option value="vertical">a vertical line — x =</option><option value="horizontal" selected>a horizontal line — y =</option></select></div>
+    <div class="field axis-line"><span class="eq" id="axisEqLabel">y =</span><input type="text" id="kInput" value="-6" placeholder="value (k)"></div>
+    <div class="field"><label for="methodSelect">Visualization Method</label><select id="methodSelect"><option value="auto">Auto</option><option value="disc">Disc / Washer</option><option value="shell">Shell</option></select></div>
     <button class="btn-primary" id="renderBtn">Build the solid</button>
-
     <div class="presets">
       <button class="preset-btn" data-preset="sin-vert">sin(x), [0,π], x=-1</button>
       <button class="preset-btn" data-preset="disk">x², [0,2], x-axis</button>
@@ -372,63 +74,33 @@
       <button class="preset-btn" data-preset="expx">eˣ, [0,2], y=-1</button>
       <button class="preset-btn" data-preset="three-curves">x², 8−x², y=0, [0,2], x=0</button>
     </div>
-
     <div class="error-banner" id="errorBanner"></div>
-
-    <!-- 2D Region Preview -->
     <canvas id="previewCanvas" class="preview-canvas" width="322" height="150"></canvas>
-
-    <!-- Green slider for blue rectangle -->
     <div class="slider-field">
-      <div class="slider-label-row">
-        <span style="color:var(--green);">Slide Me! (blue x position)</span>
-        <span class="val" id="blueXVal">2.5</span>
-      </div>
+      <div class="slider-label-row"><span style="color:var(--green);">Slide Me! (blue x position)</span><span class="val" id="blueXVal">2.5</span></div>
       <input type="range" id="blueXSlider" min="0" max="4" value="2.5" step="0.01" class="green-slider">
     </div>
-
-    <!-- Pink slider for number of rectangles -->
     <div class="slider-field">
-      <div class="slider-label-row">
-        <span style="color:var(--pink);">Pink rectangles (n)</span>
-        <span class="val" id="pinkNVal">20</span>
-      </div>
+      <div class="slider-label-row"><span style="color:var(--pink);">Pink rectangles (n)</span><span class="val" id="pinkNVal">20</span></div>
       <input type="range" id="pinkNSlider" min="1" max="100" value="20" step="1" class="pink-slider">
     </div>
-
-    <!-- Grey slider for revolution angle -->
     <div class="slider-field">
-      <div class="slider-label-row">
-        <span style="color:#9ca3af;">Rotation angle θ</span>
-        <span class="val" id="angleVal">360°</span>
-      </div>
+      <div class="slider-label-row"><span style="color:#9ca3af;">Rotation angle θ</span><span class="val" id="angleVal">360°</span></div>
       <input type="range" id="angleSlider" min="0" max="360" value="360" step="1" class="grey-slider">
     </div>
-
     <div class="slider-field">
       <div class="slider-label-row"><span>Transparency</span><span class="val" id="opVal">0.55</span></div>
       <input type="range" id="opSlider" min="10" max="95" value="55">
     </div>
-
     <div class="readout">
       <div class="line"><span class="k">Volume (Simpson's rule)</span><span class="v" id="volOut">—</span></div>
       <div class="line"><span class="k">Method</span><span class="v" id="methodOut">—</span></div>
     </div>
-
-    <div class="hint">
-      <b>Visualization Method:</b> Disc or Shell.<br>
-      Shell thickness = one pink rectangle width.<br>
-      Hollow shell shows the hole correctly.
-    </div>
+    <div class="hint">Shell (horizontal axis): rectangle extends to the right bound. Slider stays inside [from x=, to x=] interval.</div>
   </div>
-
   <div class="viewport">
     <canvas id="glcanvas"></canvas>
-    <div class="viewport-hud">
-      <div class="eq-label" id="hudEq">y = 3*sqrt(x-1)</div>
-      <div id="hudAxis">rotated about y = -6</div>
-      <div style="margin-top:2px; color:var(--teal-dim);" id="hudAxisWorld"></div>
-    </div>
+    <div class="viewport-hud"><div class="eq-label" id="hudEq">y = 3*sqrt(x-1)</div><div id="hudAxis">rotated about y = -6</div><div style="margin-top:2px; color:var(--teal-dim);" id="hudAxisWorld"></div></div>
     <div class="controls-hint">drag to orbit · scroll to zoom</div>
     <div class="legend">
       <span><span class="dot" style="background:var(--teal)"></span>solid</span>
@@ -441,894 +113,469 @@
 </div>
 
 <script>
-window.addEventListener('load', function(){
-
-  // ---------------- Three.js scene setup ----------------
+(function(){
   var canvas = document.getElementById('glcanvas');
   var renderer, scene, camera;
   var solidGroup = new THREE.Group();
-  var outerCurveMesh = null, innerCurveMesh = null, axisMesh = null, surfaceMesh = null, wireMesh = null;
-  var outerCurve2Mesh = null;
-  var target = new THREE.Vector3(0,0,0);
-  var spherical = { radius: 8, theta: Math.PI*0.28, phi: Math.PI*0.38 };
-
   var highlightGroup = new THREE.Group();
   var pink3DGroup = new THREE.Group();
   solidGroup.add(highlightGroup);
   solidGroup.add(pink3DGroup);
-
+  var outerCurveMesh=null, innerCurveMesh=null, axisMesh=null, surfaceMesh=null, wireMesh=null, outerCurve2Mesh=null;
+  var target = new THREE.Vector3(0,0,0);
+  var spherical = { radius: 8, theta: Math.PI*0.28, phi: Math.PI*0.38 };
   var previewCanvas = document.getElementById('previewCanvas');
   var previewCtx = previewCanvas.getContext('2d');
 
   var currentState = {
-    f1: null, f2: null, top: null, bottom: null,
-    a: 0, b: 0, k: 0, axisType: 'horizontal',
-    opacity: 0.55, maxAngle: 2*Math.PI,
-    blueX: 2.5, pinkN: 20,
-    vizMethod: 'auto'
+    f1:null, f2:null, top:null, bottom:null,
+    a:0, b:0, k:0, axisType:'horizontal',
+    opacity:0.55, maxAngle:2*Math.PI,
+    blueX:2.5, pinkN:20, vizMethod:'auto'
   };
 
-  math.import({ ln: function(x) { return Math.log(x); } }, { override: true });
+  math.import({ ln: function(x){ return Math.log(x); } }, { override: true });
 
   try{
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias:true, alpha:true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
-  }catch(e){
-    showError('WebGL could not start: ' + e.message);
-    return;
-  }
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  }catch(e){ showError('WebGL error: '+e.message); return; }
 
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(45, 1, 0.05, 200);
+  camera = new THREE.PerspectiveCamera(45,1,0.05,200);
   scene.add(solidGroup);
+  scene.add(new THREE.HemisphereLight(0x9fd8ff,0x0a0e13,0.9));
+  var d1 = new THREE.DirectionalLight(0xffffff,0.9); d1.position.set(5,8,6); scene.add(d1);
+  var d2 = new THREE.DirectionalLight(0x5eead4,0.25); d2.position.set(-6,-2,-4); scene.add(d2);
+  var grid = new THREE.GridHelper(20,20,0x1c2530,0x171f28); grid.position.y=-0.001; scene.add(grid);
 
-  var hemi = new THREE.HemisphereLight(0x9fd8ff, 0x0a0e13, 0.9);
-  scene.add(hemi);
-  var key = new THREE.DirectionalLight(0xffffff, 0.9);
-  key.position.set(5,8,6);
-  scene.add(key);
-  var fill = new THREE.DirectionalLight(0x5eead4, 0.25);
-  fill.position.set(-6,-2,-4);
-  scene.add(fill);
-
-  var grid = new THREE.GridHelper(20, 20, 0x1c2530, 0x171f28);
-  grid.position.y = -0.001;
-  scene.add(grid);
-
-  function createAxisLine(start, end, color, arrowLength = 0.4, arrowRadius = 0.08) {
-    var group = new THREE.Group();
-    var dir = new THREE.Vector3().subVectors(end, start);
-    var lineGeo = new THREE.BufferGeometry().setFromPoints([start, end]);
-    var line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: color }));
-    group.add(line);
-    var coneGeo = new THREE.ConeGeometry(arrowRadius, arrowLength, 8);
-    var cone = new THREE.Mesh(coneGeo, new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.4 }));
-    cone.position.copy(end);
-    var axis = new THREE.Vector3(0,1,0);
-    var quat = new THREE.Quaternion().setFromUnitVectors(axis, dir.normalize());
-    cone.setRotationFromQuaternion(quat);
-    group.add(cone);
-    return group;
+  function createAxisLine(s,e,c){
+    var g=new THREE.Group();
+    var d=new THREE.Vector3().subVectors(e,s);
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([s,e]),new THREE.LineBasicMaterial({color:c})));
+    var cone=new THREE.Mesh(new THREE.ConeGeometry(0.08,0.4,8),new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:0.4}));
+    cone.position.copy(e);
+    cone.setRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize()));
+    g.add(cone);
+    return g;
   }
-
-  var axisLength = 8;
   var axesGroup = new THREE.Group();
-  axesGroup.add(createAxisLine(new THREE.Vector3(-axisLength,0,0), new THREE.Vector3(axisLength,0,0), 0xff5555));
-  axesGroup.add(createAxisLine(new THREE.Vector3(0,-axisLength,0), new THREE.Vector3(0,axisLength,0), 0x55ff55));
-  axesGroup.add(createAxisLine(new THREE.Vector3(0,0,-axisLength), new THREE.Vector3(0,0,axisLength), 0x5555ff));
+  axesGroup.add(createAxisLine(new THREE.Vector3(-8,0,0),new THREE.Vector3(8,0,0),0xff5555));
+  axesGroup.add(createAxisLine(new THREE.Vector3(0,-8,0),new THREE.Vector3(0,8,0),0x55ff55));
+  axesGroup.add(createAxisLine(new THREE.Vector3(0,0,-8),new THREE.Vector3(0,0,8),0x5555ff));
   scene.add(axesGroup);
 
   function resize(){
-    var vp = canvas.parentElement;
-    var w = vp.clientWidth, h = vp.clientHeight;
-    renderer.setSize(w, h, false);
-    camera.aspect = w/h;
+    var vp=canvas.parentElement;
+    renderer.setSize(vp.clientWidth,vp.clientHeight,false);
+    camera.aspect=vp.clientWidth/vp.clientHeight;
     camera.updateProjectionMatrix();
   }
-  window.addEventListener('resize', resize);
+  window.addEventListener('resize',resize);
 
-  var dragging = false, lastX=0, lastY=0;
-  canvas.addEventListener('pointerdown', function(e){
-    dragging = true; lastX = e.clientX; lastY = e.clientY;
-    canvas.setPointerCapture(e.pointerId);
-  });
-  canvas.addEventListener('pointerup', function(e){ dragging = false; });
-  canvas.addEventListener('pointerleave', function(){ dragging = false; });
-  canvas.addEventListener('pointermove', function(e){
+  var dragging=false, lx=0, ly=0;
+  canvas.addEventListener('pointerdown',function(e){ dragging=true; lx=e.clientX; ly=e.clientY; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointerup',function(){ dragging=false; });
+  canvas.addEventListener('pointerleave',function(){ dragging=false; });
+  canvas.addEventListener('pointermove',function(e){
     if(!dragging) return;
-    var dx = e.clientX - lastX, dy = e.clientY - lastY;
-    lastX = e.clientX; lastY = e.clientY;
-    spherical.theta -= dx * 0.006;
-    spherical.phi -= dy * 0.006;
+    var dx=e.clientX-lx, dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
+    spherical.theta -= dx*0.006; spherical.phi -= dy*0.006;
     spherical.phi = Math.max(0.08, Math.min(Math.PI-0.08, spherical.phi));
   });
-  canvas.addEventListener('wheel', function(e){
-    e.preventDefault();
-    spherical.radius *= (1 + e.deltaY*0.001);
-    spherical.radius = Math.max(1.5, Math.min(60, spherical.radius));
-  }, { passive:false });
+  canvas.addEventListener('wheel',function(e){ e.preventDefault(); spherical.radius *= 1+e.deltaY*0.001; spherical.radius = Math.max(1.5, Math.min(60, spherical.radius)); }, {passive:false});
 
   function updateCamera(){
-    var r = spherical.radius, t = spherical.theta, p = spherical.phi;
-    camera.position.set(
-      target.x + r*Math.sin(p)*Math.sin(t),
-      target.y + r*Math.cos(p),
-      target.z + r*Math.sin(p)*Math.cos(t)
-    );
+    var r=spherical.radius, t=spherical.theta, p=spherical.phi;
+    camera.position.set(target.x+r*Math.sin(p)*Math.sin(t), target.y+r*Math.cos(p), target.z+r*Math.sin(p)*Math.cos(t));
     camera.lookAt(target);
   }
+  function animate(){ requestAnimationFrame(animate); updateCamera(); renderer.render(scene,camera); }
 
-  function animate(){
-    requestAnimationFrame(animate);
-    updateCamera();
-    renderer.render(scene, camera);
-  }
+  function showError(msg){ var b=document.getElementById('errorBanner'); b.classList.remove('warning'); b.textContent=msg; b.style.display=msg?'block':'none'; }
+  function showWarning(msg){ var b=document.getElementById('errorBanner'); b.classList.add('warning'); b.textContent=msg; b.style.display=msg?'block':'none'; }
 
-  function showError(msg){
-    var b = document.getElementById('errorBanner');
-    b.classList.remove('warning');
-    b.textContent = msg;
-    b.style.display = msg ? 'block' : 'none';
-  }
-  function showWarning(msg){
-    var b = document.getElementById('errorBanner');
-    b.classList.add('warning');
-    b.textContent = msg;
-    b.style.display = msg ? 'block' : 'none';
-  }
-
+  // Fixed compileFn
   function compileFn(str){
     var node = math.parse(str);
     var code = node.compile();
     return function(x){ return code.evaluate({x:x}); };
   }
-  function evalExpr(str){
-    return math.evaluate(str);
+  function evalExpr(str){ return math.evaluate(str); }
+
+  function simpson(f,a,b,n){
+    if(n%2)n++;
+    var h=(b-a)/n, s=f(a)+f(b);
+    for(var i=1;i<n;i++) s+=f(a+i*h)*(i%2?4:2);
+    return s*h/3;
   }
 
-  function simpson(f, a, b, n){
-    if(n % 2 === 1) n++;
-    var h = (b-a)/n, sum = f(a) + f(b);
-    for(var i=1;i<n;i++){
-      var x = a + i*h;
-      sum += f(x) * (i % 2 === 0 ? 2 : 4);
-    }
-    return sum * h / 3;
-  }
-
-  function buildLoop(top, bottom, a, b, M){
-    var pts = [];
-    var wallSamples = Math.max(2, Math.round(M*0.06));
-    var curveSamples = M;
-    var ya0 = top(a), yb0 = top(b);
-    var ya1 = bottom(a), yb1 = bottom(b);
-    for(var i=0;i<wallSamples;i++){
-      var t = i/(wallSamples-1);
-      pts.push({x:a, y: ya1 + (ya0-ya1)*t});
-    }
-    for(var i=1;i<curveSamples;i++){
-      var t = i/(curveSamples-1);
-      var x = a + (b-a)*t;
-      pts.push({x:x, y:top(x)});
-    }
-    for(var i=1;i<wallSamples;i++){
-      var t = i/(wallSamples-1);
-      pts.push({x:b, y: yb0 + (yb1-yb0)*t});
-    }
-    for(var i=1;i<curveSamples-1;i++){
-      var t = i/(curveSamples-1);
-      var x = b - (b-a)*t;
-      pts.push({x:x, y:bottom(x)});
-    }
+  function buildLoop(top,bottom,a,b,M){
+    var pts=[]; var ws=Math.max(2,Math.round(M*0.06)), cs=M;
+    var ya0=top(a), yb0=top(b), ya1=bottom(a), yb1=bottom(b);
+    for(var i=0;i<ws;i++){ var t=i/(ws-1); pts.push({x:a, y:ya1+(ya0-ya1)*t}); }
+    for(var i=1;i<cs;i++){ var t=i/(cs-1); var x=a+(b-a)*t; pts.push({x:x, y:top(x)}); }
+    for(var i=1;i<ws;i++){ var t=i/(ws-1); pts.push({x:b, y:yb0+(yb1-yb0)*t}); }
+    for(var i=1;i<cs-1;i++){ var t=i/(cs-1); var x=b-(b-a)*t; pts.push({x:x, y:bottom(x)}); }
     return pts;
   }
 
-  function disposeMesh(m){
-    if(!m) return;
-    if(m.parent) m.parent.remove(m);
-    if(m.geometry) m.geometry.dispose();
-    if(m.material) m.material.dispose();
+  function disposeMesh(m){ if(m){ if(m.parent)m.parent.remove(m); m.geometry.dispose(); m.material.dispose(); } }
+
+  function getInnerHeights(top,bottom,x0,x1,samples){
+    var tv=[], bv=[];
+    for(var i=0;i<=samples;i++){ var x=x0+(x1-x0)*i/samples; tv.push(top(x)); bv.push(bottom(x)); }
+    return { topMin: Math.min.apply(null,tv), bottomMax: Math.max.apply(null,bv) };
   }
 
-  function getInnerHeights(top, bottom, x0, x1, samples) {
-    var topVals = [], bottomVals = [];
-    for (var i = 0; i <= samples; i++) {
-      var x = x0 + (x1 - x0) * i / samples;
-      topVals.push(top(x));
-      bottomVals.push(bottom(x));
-    }
-    return {
-      topMin: Math.min.apply(null, topVals),
-      bottomMax: Math.max.apply(null, bottomVals)
-    };
-  }
+  function drawPreview(state, pinkN){
+    if(!previewCtx) return; var w=previewCanvas.width, h=previewCanvas.height;
+    previewCtx.clearRect(0,0,w,h);
+    var top=state.top, bottom=state.bottom, a=state.a, b=state.b, k=state.k, axisType=state.axisType, blueX=state.blueX, vizMethod=state.vizMethod;
+    var samples=80;
+    var yMin=Infinity, yMax=-Infinity;
+    for(var i=0;i<=samples;i++){ var x=a+(b-a)*i/samples; var yt=top(x), yb=bottom(x); yMin=Math.min(yMin,yb); yMax=Math.max(yMax,yt); }
+    if(axisType==='horizontal'){ yMin=Math.min(yMin,k); yMax=Math.max(yMax,k); }
+    var pad=(yMax-yMin)*0.15||1; yMin-=pad; yMax+=pad;
+    function scaleX(x){ return 20+(x-a)/(b-a)*(w-40); }
+    function scaleY(y){ return h-20-(y-yMin)/(yMax-yMin)*(h-40); }
 
-  // ---- 2D Preview ----
-  function drawPreview(state, pinkN) {
-    if (!previewCtx) return;
-    var w = previewCanvas.width, h = previewCanvas.height;
-    previewCtx.clearRect(0, 0, w, h);
-    var top = state.top, bottom = state.bottom, a = state.a, b = state.b;
-    var k = state.k, axisType = state.axisType;
-    var blueX = state.blueX;
-    var vizMethod = state.vizMethod;
-
-    var samples = 80;
-    var yMin = Infinity, yMax = -Infinity;
-    for (var i = 0; i <= samples; i++) {
-      var x = a + (b-a)*i/samples;
-      var yt = top(x), yb = bottom(x);
-      yMin = Math.min(yMin, yb);
-      yMax = Math.max(yMax, yt);
-    }
-    if (axisType === 'horizontal') {
-      yMin = Math.min(yMin, k);
-      yMax = Math.max(yMax, k);
-    }
-    var pad = (yMax - yMin) * 0.15 || 1;
-    yMin -= pad; yMax += pad;
-
-    function scaleX(x) { return 20 + (x - a) / (b - a) * (w - 40); }
-    function scaleY(y) { return h - 20 - (y - yMin) / (yMax - yMin) * (h - 40); }
-
-    // Pink rectangles
-    if (pinkN > 0) {
-      var dx = (b - a) / pinkN;
-      previewCtx.fillStyle = 'rgba(244, 114, 182, 0.3)';
-      previewCtx.strokeStyle = 'rgba(244, 114, 182, 0.5)';
-      previewCtx.lineWidth = 0.5;
-      for (var i = 0; i < pinkN; i++) {
-        var x0 = a + i * dx;
-        var x1 = x0 + dx;
-        var hts = getInnerHeights(top, bottom, x0, x1, 4);
-        var yTop = hts.topMin;
-        var yBot = hts.bottomMax;
-        if (yBot > yTop) { var tmp = yTop; yTop = yBot; yBot = tmp; }
-        var sx0 = scaleX(x0), sx1 = scaleX(x1);
-        var syTop = scaleY(yTop), syBot = scaleY(yBot);
-        previewCtx.fillRect(sx0, syTop, sx1 - sx0, syBot - syTop);
-        previewCtx.strokeRect(sx0, syTop, sx1 - sx0, syBot - syTop);
+    // Pink
+    if(pinkN>0){
+      var dx=(b-a)/pinkN;
+      previewCtx.fillStyle='rgba(244,114,182,0.3)'; previewCtx.strokeStyle='rgba(244,114,182,0.5)'; previewCtx.lineWidth=0.5;
+      for(var i=0;i<pinkN;i++){
+        var x0=a+i*dx, x1=x0+dx;
+        var hts=getInnerHeights(top,bottom,x0,x1,4);
+        var yTop=hts.topMin, yBot=hts.bottomMax;
+        if(yBot>yTop){ var tmp=yTop; yTop=yBot; yBot=tmp; }
+        var sx0=scaleX(x0), sx1=scaleX(x1), syTop=scaleY(yTop), syBot=scaleY(yBot);
+        previewCtx.fillRect(sx0,syTop,sx1-sx0,syBot-syTop);
+        previewCtx.strokeRect(sx0,syTop,sx1-sx0,syBot-syTop);
       }
     }
 
-    // Region outline
+    // Region
     previewCtx.beginPath();
-    for (var i = 0; i <= samples; i++) {
-      var x = a + (b-a)*i/samples;
-      var yt = top(x);
-      var sx = scaleX(x), sy = scaleY(yt);
-      if (i === 0) previewCtx.moveTo(sx, sy);
-      else previewCtx.lineTo(sx, sy);
-    }
-    for (var i = samples; i >= 0; i--) {
-      var x = a + (b-a)*i/samples;
-      var yb = bottom(x);
-      var sx = scaleX(x), sy = scaleY(yb);
-      previewCtx.lineTo(sx, sy);
-    }
-    previewCtx.closePath();
-    previewCtx.fillStyle = 'rgba(94, 234, 212, 0.15)';
-    previewCtx.fill();
-    previewCtx.strokeStyle = '#5eead4';
-    previewCtx.lineWidth = 1.5;
-    previewCtx.stroke();
+    for(var i=0;i<=samples;i++){ var x=a+(b-a)*i/samples; var sx=scaleX(x), sy=scaleY(top(x)); i?previewCtx.lineTo(sx,sy):previewCtx.moveTo(sx,sy); }
+    for(var i=samples;i>=0;i--){ var x=a+(b-a)*i/samples; previewCtx.lineTo(scaleX(x), scaleY(bottom(x))); }
+    previewCtx.closePath(); previewCtx.fillStyle='rgba(94,234,212,0.15)'; previewCtx.fill(); previewCtx.strokeStyle='#5eead4'; previewCtx.lineWidth=1.5; previewCtx.stroke();
 
-    // Blue rectangle
-    if (blueX >= a && blueX <= b) {
-      var yTop = top(blueX);
-      var yBot = bottom(blueX);
-      var effectiveMethod = vizMethod;
-      if (effectiveMethod === 'auto') {
-        effectiveMethod = (axisType === 'vertical') ? 'shell' : 'disc';
-      }
-
-      if (effectiveMethod === 'disc') {
-        var blueW = (b - a) / 50;
-        var xLeft = blueX - blueW/2;
-        var xRight = blueX + blueW/2;
-        if (xLeft < a) xLeft = a;
-        if (xRight > b) xRight = b;
-        var sx0 = scaleX(xLeft), sx1 = scaleX(xRight);
-        var syTop = scaleY(yTop), syBot = scaleY(yBot);
-        previewCtx.fillStyle = 'rgba(96, 165, 250, 0.4)';
-        previewCtx.strokeStyle = '#60a5fa';
-        previewCtx.lineWidth = 2;
-        previewCtx.fillRect(sx0, syTop, sx1 - sx0, syBot - syTop);
-        previewCtx.strokeRect(sx0, syTop, sx1 - sx0, syBot - syTop);
-      } else if (effectiveMethod === 'shell') {
-        var dx = (b - a) / pinkN;
-        var xLeft = blueX;
-        var xRight = blueX + dx;
-        if (xRight > b) xRight = b;
-        var sx0 = scaleX(xLeft), sx1 = scaleX(xRight);
-        var syTop = scaleY(yTop), syBot = scaleY(yBot);
-        previewCtx.fillStyle = 'rgba(96, 165, 250, 0.3)';
-        previewCtx.strokeStyle = '#60a5fa';
-        previewCtx.lineWidth = 2;
-        previewCtx.fillRect(sx0, syTop, sx1 - sx0, syBot - syTop);
-        previewCtx.strokeRect(sx0, syTop, sx1 - sx0, syBot - syTop);
+    // Blue
+    if(blueX>=a && blueX<=b){
+      var yTop=top(blueX), yBot=bottom(blueX);
+      var effectiveMethod = vizMethod==='auto' ? (axisType==='vertical'?'shell':'disc') : vizMethod;
+      if(effectiveMethod==='disc'){
+        var bw=(b-a)/50, xL=blueX-bw/2, xR=blueX+bw/2;
+        if(xL<a)xL=a; if(xR>b)xR=b;
+        var sx0=scaleX(xL), sx1=scaleX(xR), syTop=scaleY(yTop), syBot=scaleY(yBot);
+        previewCtx.fillStyle='rgba(96,165,250,0.4)'; previewCtx.strokeStyle='#60a5fa'; previewCtx.lineWidth=2;
+        previewCtx.fillRect(sx0,syTop,sx1-sx0,syBot-syTop); previewCtx.strokeRect(sx0,syTop,sx1-sx0,syBot-syTop);
+      } else { // shell
+        if(axisType==='horizontal'){
+          var sx0=scaleX(blueX), sx1=scaleX(b), syTop=scaleY(yTop), syBot=scaleY(yBot);
+          previewCtx.fillStyle='rgba(96,165,250,0.3)'; previewCtx.strokeStyle='#60a5fa'; previewCtx.lineWidth=2;
+          previewCtx.fillRect(sx0,syTop,sx1-sx0,syBot-syTop); previewCtx.strokeRect(sx0,syTop,sx1-sx0,syBot-syTop);
+        } else {
+          var dx=(b-a)/pinkN, xL=blueX, xR=blueX+dx; if(xR>b)xR=b;
+          var sx0=scaleX(xL), sx1=scaleX(xR), syTop=scaleY(yTop), syBot=scaleY(yBot);
+          previewCtx.fillStyle='rgba(96,165,250,0.4)'; previewCtx.strokeStyle='#60a5fa'; previewCtx.lineWidth=2;
+          previewCtx.fillRect(sx0,syTop,sx1-sx0,syBot-syTop); previewCtx.strokeRect(sx0,syTop,sx1-sx0,syBot-syTop);
+        }
       }
     }
 
     // Axis
-    previewCtx.strokeStyle = '#e2685f';
-    previewCtx.setLineDash([4, 4]);
-    previewCtx.lineWidth = 1.5;
-    if (axisType === 'vertical') {
-      var sx = scaleX(k);
-      if (sx >= 0 && sx <= w) {
-        previewCtx.beginPath();
-        previewCtx.moveTo(sx, 0);
-        previewCtx.lineTo(sx, h);
-        previewCtx.stroke();
-      }
-    } else {
-      var sy = scaleY(k);
-      if (sy >= 0 && sy <= h) {
-        previewCtx.beginPath();
-        previewCtx.moveTo(0, sy);
-        previewCtx.lineTo(w, sy);
-        previewCtx.stroke();
-      }
-    }
+    previewCtx.strokeStyle='#e2685f'; previewCtx.setLineDash([4,4]); previewCtx.lineWidth=1.5;
+    if(axisType==='vertical'){ var sx=scaleX(k); if(sx>=0&&sx<=w){ previewCtx.beginPath(); previewCtx.moveTo(sx,0); previewCtx.lineTo(sx,h); previewCtx.stroke(); } }
+    else { var sy=scaleY(k); if(sy>=0&&sy<=h){ previewCtx.beginPath(); previewCtx.moveTo(0,sy); previewCtx.lineTo(w,sy); previewCtx.stroke(); } }
     previewCtx.setLineDash([]);
-
-    previewCtx.strokeStyle = '#2f6f66';
-    previewCtx.lineWidth = 1;
-    var zeroY = scaleY(0);
-    if (zeroY > 0 && zeroY < h) {
-      previewCtx.beginPath();
-      previewCtx.moveTo(0, zeroY);
-      previewCtx.lineTo(w, zeroY);
-      previewCtx.stroke();
-    }
+    previewCtx.strokeStyle='#2f6f66'; previewCtx.lineWidth=1;
+    var zeroY=scaleY(0); if(zeroY>0&&zeroY<h){ previewCtx.beginPath(); previewCtx.moveTo(0,zeroY); previewCtx.lineTo(w,zeroY); previewCtx.stroke(); }
   }
 
-  // ---- 3D Pink slices ----
-  function updatePink3D(state, pinkN) {
-    while(pink3DGroup.children.length > 0) pink3DGroup.remove(pink3DGroup.children[0]);
-    if (pinkN <= 0) return;
-    var top = state.top, bottom = state.bottom, a = state.a, b = state.b;
-    var k = state.k, axisType = state.axisType;
-    var dx = (b - a) / pinkN;
-    for (var i = 0; i < pinkN; i++) {
-      var x0 = a + i * dx;
-      var hts = getInnerHeights(top, bottom, x0, x0+dx, 4);
-      var yTop = hts.topMin;
-      var yBot = hts.bottomMax;
-      if (yBot > yTop) { var tmp = yTop; yTop = yBot; yBot = tmp; }
-      var height = yTop - yBot;
-      if (height <= 0) continue;
-      var centerX = x0 + dx/2;
-      var centerY = (yTop + yBot)/2;
-      var boxGeo = new THREE.BoxGeometry(dx, height, 0.02);
-      var boxMat = new THREE.MeshBasicMaterial({ color: 0xf472b6, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
-      var box = new THREE.Mesh(boxGeo, boxMat);
-      if (axisType === 'vertical') box.position.set(centerX - k, centerY, 0);
-      else box.position.set(centerX, centerY - k, 0);
+  function updatePink3D(state, pinkN){
+    while(pink3DGroup.children.length) pink3DGroup.remove(pink3DGroup.children[0]);
+    if(pinkN<=0) return;
+    var top=state.top, bottom=state.bottom, a=state.a, b=state.b, k=state.k, axisType=state.axisType;
+    var dx=(b-a)/pinkN;
+    for(var i=0;i<pinkN;i++){
+      var x0=a+i*dx, hts=getInnerHeights(top,bottom,x0,x0+dx,4), yTop=hts.topMin, yBot=hts.bottomMax;
+      if(yBot>yTop){ var tmp=yTop; yTop=yBot; yBot=tmp; }
+      var h=yTop-yBot; if(h<=0) continue;
+      var geo=new THREE.BoxGeometry(dx,h,0.02);
+      var mat=new THREE.MeshBasicMaterial({color:0xf472b6,transparent:true,opacity:0.4,side:THREE.DoubleSide});
+      var box=new THREE.Mesh(geo,mat);
+      box.position.set(axisType==='vertical'?x0+dx/2-k:x0+dx/2, (yTop+yBot)/2 - (axisType==='horizontal'?k:0), 0);
       pink3DGroup.add(box);
     }
   }
 
-  // ---- Hollow cylindrical shell geometry ----
-  function createHollowShell(innerR, outerR, height, angle, segments) {
-    if (segments < 2) segments = 2;
-    var vertices = [];
-    var indices = [];
-    var halfH = height / 2;
-
-    // bottom ring (y = -halfH)
-    var bottomOuter = [];
-    var bottomInner = [];
-    for (var i = 0; i <= segments; i++) {
-      var a = (i / segments) * angle;
-      var cos = Math.cos(a), sin = Math.sin(a);
-      bottomOuter.push(new THREE.Vector3(outerR * cos, -halfH, outerR * sin));
-      bottomInner.push(new THREE.Vector3(innerR * cos, -halfH, innerR * sin));
+  function createHollowShell(innerR, outerR, height, angle, segments){
+    if(segments<2)segments=2;
+    var verts=[], inds=[], hh=height/2;
+    function add(v){ verts.push(v.x,v.y,v.z); return (verts.length/3)-1; }
+    var bo=[], bi=[], to=[], ti=[];
+    for(var i=0;i<=segments;i++){
+      var a=(i/segments)*angle, cos=Math.cos(a), sin=Math.sin(a);
+      bo.push(new THREE.Vector3(outerR*cos, -hh, outerR*sin));
+      bi.push(new THREE.Vector3(innerR*cos, -hh, innerR*sin));
+      to.push(new THREE.Vector3(outerR*cos, hh, outerR*sin));
+      ti.push(new THREE.Vector3(innerR*cos, hh, innerR*sin));
     }
-    // top ring (y = +halfH)
-    var topOuter = [];
-    var topInner = [];
-    for (var i = 0; i <= segments; i++) {
-      var a = (i / segments) * angle;
-      var cos = Math.cos(a), sin = Math.sin(a);
-      topOuter.push(new THREE.Vector3(outerR * cos, halfH, outerR * sin));
-      topInner.push(new THREE.Vector3(innerR * cos, halfH, innerR * sin));
+    var idx={};
+    for(var i=0;i<=segments;i++){
+      idx['bo'+i]=add(bo[i]); idx['bi'+i]=add(bi[i]); idx['to'+i]=add(to[i]); idx['ti'+i]=add(ti[i]);
     }
-
-    function addVertex(v) { vertices.push(v.x, v.y, v.z); return (vertices.length/3)-1; }
-
-    var idx = {};
-    var ringLen = segments+1;
-    for (var i = 0; i < ringLen; i++) {
-      idx['bo'+i] = addVertex(bottomOuter[i]);
-      idx['bi'+i] = addVertex(bottomInner[i]);
-      idx['to'+i] = addVertex(topOuter[i]);
-      idx['ti'+i] = addVertex(topInner[i]);
+    for(var i=0;i<segments;i++){
+      var bo0=idx['bo'+i], bo1=idx['bo'+(i+1)], to0=idx['to'+i], to1=idx['to'+(i+1)];
+      var bi0=idx['bi'+i], bi1=idx['bi'+(i+1)], ti0=idx['ti'+i], ti1=idx['ti'+(i+1)];
+      inds.push(bo0,bo1,to0, bo1,to1,to0);
+      inds.push(bi0,ti0,bi1, bi1,ti0,ti1);
+      inds.push(bo0,bi0,bo1, bo1,bi0,bi1);
+      inds.push(to0,to1,ti0, to1,ti1,ti0);
     }
-
-    // side faces
-    for (var i = 0; i < segments; i++) {
-      var bo0 = idx['bo'+i], bo1 = idx['bo'+(i+1)];
-      var to0 = idx['to'+i], to1 = idx['to'+(i+1)];
-      var bi0 = idx['bi'+i], bi1 = idx['bi'+(i+1)];
-      var ti0 = idx['ti'+i], ti1 = idx['ti'+(i+1)];
-
-      // outer wall
-      indices.push(bo0, bo1, to0);
-      indices.push(bo1, to1, to0);
-      // inner wall
-      indices.push(bi0, ti0, bi1);
-      indices.push(bi1, ti0, ti1);
-      // bottom cap
-      indices.push(bo0, bi0, bo1);
-      indices.push(bo1, bi0, bi1);
-      // top cap
-      indices.push(to0, to1, ti0);
-      indices.push(to1, ti1, ti0);
+    if(angle<2*Math.PI-0.001){
+      var bof=idx['bo0'], btf=idx['to0'], bif=idx['bi0'], tif=idx['ti0'];
+      var bol=idx['bo'+segments], btl=idx['to'+segments], bil=idx['bi'+segments], til=idx['ti'+segments];
+      inds.push(bof,bif,btf, btf,bif,tif);
+      inds.push(bol,btl,bil, btl,til,bil);
     }
-
-    // if partial angle, add side caps
-    if (angle < 2*Math.PI - 0.001) {
-      var bof = idx['bo0'], btf = idx['to0'];
-      var bif = idx['bi0'], tif = idx['ti0'];
-      var bol = idx['bo'+segments], btl = idx['to'+segments];
-      var bil = idx['bi'+segments], til = idx['ti'+segments];
-      // front cap (i=0)
-      indices.push(bof, bif, btf);
-      indices.push(btf, bif, tif);
-      // back cap (i=segments)
-      indices.push(bol, btl, bil);
-      indices.push(btl, til, bil);
-    }
-
-    var geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    geo.setIndex(indices);
-    geo.computeVertexNormals();
+    var geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+    geo.setIndex(inds); geo.computeVertexNormals();
     return geo;
   }
 
-  // ---- Update highlight slice ----
-  function updateHighlightSlice(state) {
-    while(highlightGroup.children.length > 0) highlightGroup.remove(highlightGroup.children[0]);
-    var blueX = state.blueX;
-    var top = state.top, bottom = state.bottom, a = state.a, b = state.b;
-    var axisType = state.axisType, k = state.k, maxAngle = state.maxAngle;
-    var pinkN = state.pinkN;
-    var yTop = top(blueX);
-    var yBot = bottom(blueX);
-    if (yBot > yTop) { var tmp = yTop; yTop = yBot; yBot = tmp; }
-    var height = yTop - yBot;
-    if (height <= 0) return;
+  function updateHighlightSlice(state){
+    while(highlightGroup.children.length) highlightGroup.remove(highlightGroup.children[0]);
+    var blueX=state.blueX, top=state.top, bottom=state.bottom, a=state.a, b=state.b;
+    var axisType=state.axisType, k=state.k, maxAngle=state.maxAngle, pinkN=state.pinkN;
+    var yTop=top(blueX), yBot=bottom(blueX);
+    if(yBot>yTop){ var t=yTop; yTop=yBot; yBot=t; }
+    var h=yTop-yBot; if(h<=0) return;
+    var effectiveMethod = state.vizMethod==='auto' ? (axisType==='vertical'?'shell':'disc') : state.vizMethod;
+    var dx=(b-a)/pinkN;
+    var segments=64, angleSteps=Math.round(segments*maxAngle/(2*Math.PI)); if(angleSteps<2)angleSteps=2;
 
-    var effectiveMethod = state.vizMethod;
-    if (effectiveMethod === 'auto') {
-      effectiveMethod = (axisType === 'vertical') ? 'shell' : 'disc';
-    }
-
-    var dx = (b - a) / pinkN;  // thickness = one pink rectangle
-
-    if (effectiveMethod === 'disc') {
-      // Washer slice (thin ring)
-      var innerR = Math.abs(yBot - k);
-      var outerR = Math.abs(yTop - k);
-      if (outerR < 0.001) return;
-      var xFront = blueX - dx/2;
-      var xBack = blueX + dx/2;
-      var segments = 64;
-      var angleSteps = Math.round(segments * maxAngle / (2*Math.PI));
-      if (angleSteps < 2) angleSteps = 2;
-
-      function arcPoints(r, xPos) {
-        var pts = [];
-        for (var i = 0; i <= angleSteps; i++) {
-          var a = (i / angleSteps) * maxAngle;
-          pts.push(new THREE.Vector3(xPos, r * Math.cos(a), r * Math.sin(a)));
-        }
-        return pts;
+    if(effectiveMethod==='disc'){
+      var innerR=Math.abs(yBot-k), outerR=Math.abs(yTop-k);
+      if(outerR<0.001)return;
+      var xF=blueX-dx/2, xB=blueX+dx/2;
+      function arc(r,xp){ var p=[]; for(var i=0;i<=angleSteps;i++){ var a=(i/angleSteps)*maxAngle; p.push(new THREE.Vector3(xp,r*Math.cos(a),r*Math.sin(a))); } return p; }
+      var of=arc(outerR,xF), ob=arc(outerR,xB), inf=arc(innerR,xF), inb=arc(innerR,xB);
+      function line(pts){ return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x60a5fa})); }
+      highlightGroup.add(line(of)); highlightGroup.add(line(ob)); highlightGroup.add(line(inf)); highlightGroup.add(line(inb));
+      if(maxAngle<2*Math.PI-0.001){
+        function conn(a,b){ return new THREE.Line(new THREE.BufferGeometry().setFromPoints([a,b]),new THREE.LineBasicMaterial({color:0x60a5fa})); }
+        highlightGroup.add(conn(of[0],ob[0])); highlightGroup.add(conn(of[of.length-1],ob[ob.length-1]));
+        highlightGroup.add(conn(inf[0],inb[0])); highlightGroup.add(conn(inf[inf.length-1],inb[inb.length-1]));
       }
-      var outerFront = arcPoints(outerR, xFront);
-      var outerBack = arcPoints(outerR, xBack);
-      var innerFront = arcPoints(innerR, xFront);
-      var innerBack = arcPoints(innerR, xBack);
-      function lineFromPoints(points, color) {
-        var geo = new THREE.BufferGeometry().setFromPoints(points);
-        return new THREE.Line(geo, new THREE.LineBasicMaterial({ color: color }));
-      }
-      var blueColor = 0x60a5fa;
-      highlightGroup.add(lineFromPoints(outerFront, blueColor));
-      highlightGroup.add(lineFromPoints(outerBack, blueColor));
-      highlightGroup.add(lineFromPoints(innerFront, blueColor));
-      highlightGroup.add(lineFromPoints(innerBack, blueColor));
-      if (maxAngle < 2*Math.PI - 0.001) {
-        function connect(a, b) {
-          var geo = new THREE.BufferGeometry().setFromPoints([a, b]);
-          return new THREE.Line(geo, new THREE.LineBasicMaterial({ color: blueColor }));
-        }
-        highlightGroup.add(connect(outerFront[0], outerBack[0]));
-        highlightGroup.add(connect(outerFront[outerFront.length-1], outerBack[outerBack.length-1]));
-        highlightGroup.add(connect(innerFront[0], innerBack[0]));
-        highlightGroup.add(connect(innerFront[innerFront.length-1], innerBack[innerBack.length-1]));
-      }
-    } else if (effectiveMethod === 'shell') {
-      // Hollow cylindrical shell
-      var innerR = Math.abs(yBot - k);
-      var outerR = Math.abs(yTop - k);
-      if (outerR < 0.001) return;
-      var segments = 64;
-      var angleSteps = Math.round(segments * maxAngle / (2*Math.PI));
-      if (angleSteps < 2) angleSteps = 2;
-      if (axisType === 'vertical') {
-        // vertical shell: ring in XZ, height along Y
-        var geo = createHollowShell(innerR, outerR, height, maxAngle, angleSteps);
-        var mat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
-        var shell = new THREE.Mesh(geo, mat);
-        shell.position.y = (yTop + yBot) / 2;
-        var wireGeo = new THREE.EdgesGeometry(geo);
-        var wireMat = new THREE.LineBasicMaterial({ color: 0x60a5fa });
-        var wireframe = new THREE.LineSegments(wireGeo, wireMat);
-        shell.add(wireframe);
+    } else { // shell
+      if(axisType==='vertical'){
+        var radius=Math.abs(blueX-k);
+        var innerR=radius-dx/2, outerR=radius+dx/2; if(innerR<0)innerR=0;
+        var geo=createHollowShell(innerR,outerR,h,maxAngle,angleSteps);
+        var mat=new THREE.MeshBasicMaterial({color:0x60a5fa,transparent:true,opacity:0.45,side:THREE.DoubleSide});
+        var shell=new THREE.Mesh(geo,mat); shell.position.y=(yTop+yBot)/2;
+        var wg=new THREE.EdgesGeometry(geo); shell.add(new THREE.LineSegments(wg,new THREE.LineBasicMaterial({color:0x60a5fa})));
         highlightGroup.add(shell);
       } else {
-        // horizontal shell: ring in YZ, extruded along X (length = dx)
-        // We'll create a hollow cylinder aligned with X by rotating the vertical shell by -90° around Z
-        var geo = createHollowShell(innerR, outerR, dx, maxAngle, angleSteps); // height = dx
-        var mat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
-        var shell = new THREE.Mesh(geo, mat);
-        shell.rotation.z = -Math.PI/2; // lay it along X
-        shell.position.set(blueX + dx/2, 0, 0);
-        var wireGeo = new THREE.EdgesGeometry(geo);
-        var wireMat = new THREE.LineBasicMaterial({ color: 0x60a5fa });
-        var wireframe = new THREE.LineSegments(wireGeo, wireMat);
-        shell.add(wireframe);
+        var length = b - blueX; if(length<=0)return;
+        var innerR=Math.abs(yBot-k), outerR=Math.abs(yTop-k);
+        var geo=createHollowShell(innerR,outerR,length,maxAngle,angleSteps);
+        var mat=new THREE.MeshBasicMaterial({color:0x60a5fa,transparent:true,opacity:0.45,side:THREE.DoubleSide});
+        var shell=new THREE.Mesh(geo,mat);
+        shell.rotation.z=-Math.PI/2;
+        shell.position.set(blueX+length/2,0,0);
+        var wg=new THREE.EdgesGeometry(geo); shell.add(new THREE.LineSegments(wg,new THREE.LineBasicMaterial({color:0x60a5fa})));
         highlightGroup.add(shell);
       }
     }
   }
 
-  // ---- Main build ----
   function buildScene(keepCamera){
     showError('');
-    var fnStr = document.getElementById('fnInput').value.trim();
-    var hnStr = document.getElementById('hnInput').value.trim();
-    var gnStr = document.getElementById('gnInput').value.trim();
-    var aStr = document.getElementById('aInput').value.trim();
-    var bStr = document.getElementById('bInput').value.trim();
-    var axisType = document.getElementById('axisType').value;
-    var kStr = document.getElementById('kInput').value.trim();
-    var vizMethod = document.getElementById('methodSelect').value;
-    var M = 80;
-    var T = 80;
-    var opacity = parseInt(document.getElementById('opSlider').value,10)/100;
-    var maxAngleDeg = parseInt(document.getElementById('angleSlider').value, 10);
-    var maxAngle = maxAngleDeg * Math.PI / 180;
+    var fnStr=document.getElementById('fnInput').value.trim();
+    var hnStr=document.getElementById('hnInput').value.trim();
+    var gnStr=document.getElementById('gnInput').value.trim();
+    var aStr=document.getElementById('aInput').value.trim();
+    var bStr=document.getElementById('bInput').value.trim();
+    var axisType=document.getElementById('axisType').value;
+    var kStr=document.getElementById('kInput').value.trim();
+    var vizMethod=document.getElementById('methodSelect').value;
+    var M=80, T=80;
+    var opacity=parseInt(document.getElementById('opSlider').value)/100;
+    var maxAngleDeg=parseInt(document.getElementById('angleSlider').value);
+    var maxAngle=maxAngleDeg*Math.PI/180;
 
-    var f1, f2, g, a, b, k;
+    var f1,f2,g,a,b,k;
     try{
-      f1 = compileFn(fnStr);
-      a = evalExpr(aStr);
-      b = evalExpr(bStr);
-      k = evalExpr(kStr);
-      if(typeof a !== 'number' || typeof b !== 'number' || typeof k !== 'number') throw new Error('bounds/axis must be numbers');
-      if(a === b) throw new Error('interval endpoints must differ');
-      if(a > b){ var tmp=a; a=b; b=tmp; }
-      var testVal = f1((a+b)/2);
-      if(typeof testVal !== 'number' || isNaN(testVal)) throw new Error('f₁(x) invalid');
-    }catch(e){
-      showError('Could not parse input: ' + e.message);
-      return;
+      f1=compileFn(fnStr); a=evalExpr(aStr); b=evalExpr(bStr); k=evalExpr(kStr);
+      if(typeof a!=='number'||typeof b!=='number'||typeof k!=='number') throw new Error('bounds/axis must be numbers');
+      if(a===b) throw new Error('interval endpoints must differ');
+      if(a>b){ var t=a; a=b; b=t; }
+      var tv=f1((a+b)/2); if(typeof tv!=='number'||isNaN(tv)) throw new Error('f₁(x) invalid');
+    }catch(e){ showError('Input error: '+e.message); return; }
+
+    var hasF2=hnStr.trim()!=='';
+    if(hasF2){ try{ f2=compileFn(hnStr); var t2=f2((a+b)/2); if(typeof t2!=='number'||isNaN(t2)) throw new Error('f₂(x) invalid'); }catch(e){ showError('Second curve: '+e.message); return; } }
+    var top = hasF2 ? function(x){ return Math.min(f1(x),f2(x)); } : f1;
+    var hasInner=gnStr.trim()!=='';
+    if(hasInner){ try{ g=compileFn(gnStr); var tg=g((a+b)/2); if(typeof tg!=='number'||isNaN(tg)) throw new Error('g(x) invalid'); }catch(e){ showError('Inner curve: '+e.message); return; } }
+    else {
+      if(hasF2){ g=function(x){ return 0; }; showWarning('No lower curve – using y=0.'); }
+      else { g = axisType==='horizontal' ? function(x){ return k; } : function(x){ return 0; }; showWarning(axisType==='vertical'?'Vertical axis: region between curve and y=0.':''); }
     }
-
-    var hasF2 = hnStr.trim() !== '';
-    if(hasF2){
-      try{
-        f2 = compileFn(hnStr);
-        var testF2 = f2((a+b)/2);
-        if(typeof testF2 !== 'number' || isNaN(testF2)) throw new Error('f₂(x) invalid');
-      }catch(e){
-        showError('Second upper curve error: ' + e.message);
-        return;
-      }
-    } else f2 = null;
-
-    var top;
-    if(f2) top = function(x){ return Math.min(f1(x), f2(x)); };
-    else top = f1;
-
-    var hasInner = gnStr.trim() !== '';
-    if(hasInner){
-      try{
-        g = compileFn(gnStr);
-        var testG = g((a+b)/2);
-        if(typeof testG !== 'number' || isNaN(testG)) throw new Error('g(x) invalid');
-      }catch(e){
-        showError('Inner function error: ' + e.message);
-        return;
-      }
-    } else {
-      if(f2){
-        g = function(x){ return 0; };
-        showWarning('No lower curve — using y=0.');
-      } else {
-        if(axisType === 'horizontal') g = function(x){ return k; };
-        else { g = function(x){ return 0; }; showWarning('Vertical axis: region between curve and y=0.'); }
-      }
-    }
-
-    var midX = (a+b)/2;
-    if(top(midX) < g(midX)){
-      var tmpFn = top; top = g; g = tmpFn;
-      showWarning('Swapped so outer ≥ inner.');
-    }
+    if(top((a+b)/2) < g((a+b)/2)){ var tmp=top; top=g; g=tmp; showWarning('Swapped so outer ≥ inner.'); }
 
     var blueX = parseFloat(document.getElementById('blueXSlider').value);
-    if (blueX < a) blueX = a;
-    if (blueX > b) blueX = b;
-    currentState.blueX = blueX;
-    currentState.f1 = f1; currentState.f2 = f2;
-    currentState.top = top; currentState.bottom = g;
-    currentState.a = a; currentState.b = b;
-    currentState.k = k; currentState.axisType = axisType;
-    currentState.opacity = opacity; currentState.maxAngle = maxAngle;
-    currentState.pinkN = parseInt(document.getElementById('pinkNSlider').value, 10);
-    currentState.vizMethod = vizMethod;
+    if(blueX<a)blueX=a; if(blueX>b)blueX=b;
+    currentState.blueX=blueX; currentState.f1=f1; currentState.f2=f2; currentState.top=top; currentState.bottom=g;
+    currentState.a=a; currentState.b=b; currentState.k=k; currentState.axisType=axisType;
+    currentState.opacity=opacity; currentState.maxAngle=maxAngle;
+    currentState.pinkN=parseInt(document.getElementById('pinkNSlider').value);
+    currentState.vizMethod=vizMethod;
 
-    disposeMesh(surfaceMesh); surfaceMesh = null;
-    disposeMesh(wireMesh); wireMesh = null;
-    disposeMesh(outerCurveMesh); outerCurveMesh = null;
-    disposeMesh(outerCurve2Mesh); outerCurve2Mesh = null;
-    disposeMesh(innerCurveMesh); innerCurveMesh = null;
-    disposeMesh(axisMesh); axisMesh = null;
+    disposeMesh(surfaceMesh); disposeMesh(wireMesh); disposeMesh(outerCurveMesh); disposeMesh(outerCurve2Mesh); disposeMesh(innerCurveMesh); disposeMesh(axisMesh);
 
-    var loop = buildLoop(top, g, a, b, M);
-    var ringCount = loop.length;
-    var angleSteps = maxAngleDeg >= 360 ? T : Math.round(T * maxAngle / (2*Math.PI));
-    if (angleSteps < 2) angleSteps = 2;
-    var Tn = angleSteps;
-    var positions = [];
-    var indices = [];
-    var along = [], rad = [];
+    var loop=buildLoop(top,g,a,b,M);
+    var ringCount=loop.length;
+    var angleSteps=maxAngleDeg>=360?T:Math.round(T*maxAngle/(2*Math.PI)); if(angleSteps<2)angleSteps=2;
+    var positions=[], inds=[], along=[], rad=[];
     for(var i=0;i<ringCount;i++){
-      var p = loop[i];
-      if(axisType === 'vertical'){ along.push(p.y); rad.push(p.x - k); }
-      else { along.push(p.x); rad.push(p.y - k); }
+      var p=loop[i];
+      if(axisType==='vertical'){ along.push(p.y); rad.push(p.x-k); }
+      else { along.push(p.x); rad.push(p.y-k); }
     }
-
     for(var i=0;i<ringCount;i++){
-      for(var j=0;j<=Tn;j++){
-        var theta = (j/Tn) * maxAngle;
-        var r = rad[i];
-        var c = Math.cos(theta), s = Math.sin(theta);
-        var x3, y3, z3;
-        if(axisType === 'vertical'){
-          x3 = r*c; y3 = along[i]; z3 = r*s;
-        } else {
-          x3 = along[i]; y3 = r*c; z3 = r*s;
-        }
-        positions.push(x3, y3, z3);
+      for(var j=0;j<=angleSteps;j++){
+        var theta=(j/angleSteps)*maxAngle, r=rad[i], c=Math.cos(theta), s=Math.sin(theta);
+        var x3,y3,z3;
+        if(axisType==='vertical'){ x3=r*c; y3=along[i]; z3=r*s; }
+        else { x3=along[i]; y3=r*c; z3=r*s; }
+        positions.push(x3,y3,z3);
       }
     }
-    var rowStride = Tn+1;
+    var rowStride=angleSteps+1;
     for(var i=0;i<ringCount-1;i++){
-      for(var j=0;j<Tn;j++){
-        var a0 = i*rowStride + j;
-        var a1 = i*rowStride + j+1;
-        var b0 = (i+1)*rowStride + j;
-        var b1 = (i+1)*rowStride + j+1;
-        indices.push(a0,b0,a1);
-        indices.push(b0,b1,a1);
+      for(var j=0;j<angleSteps;j++){
+        var a0=i*rowStride+j, a1=i*rowStride+j+1, b0=(i+1)*rowStride+j, b1=(i+1)*rowStride+j+1;
+        inds.push(a0,b0,a1, b0,b1,a1);
       }
     }
-
-    var geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geo.setIndex(indices);
-    geo.computeVertexNormals();
-
-    var mat = new THREE.MeshStandardMaterial({
-      color: 0x5eead4,
-      transparent: true,
-      opacity: opacity,
-      roughness: 0.45,
-      metalness: 0.05,
-      side: THREE.DoubleSide,
-      depthWrite: opacity > 0.75
-    });
-    surfaceMesh = new THREE.Mesh(geo, mat);
-    solidGroup.add(surfaceMesh);
-
-    var wireGeo = new THREE.EdgesGeometry(geo, 32);
-    var wireMat = new THREE.LineBasicMaterial({ color:0x2f6f66, transparent:true, opacity:0.35 });
-    wireMesh = new THREE.LineSegments(wireGeo, wireMat);
+    var geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+    geo.setIndex(inds); geo.computeVertexNormals();
+    var mat=new THREE.MeshStandardMaterial({color:0x5eead4,transparent:true,opacity,roughness:0.45,metalness:0.05,side:THREE.DoubleSide,depthWrite:opacity>0.75});
+    surfaceMesh=new THREE.Mesh(geo,mat); solidGroup.add(surfaceMesh);
+    var wireGeo=new THREE.EdgesGeometry(geo,32);
+    wireMesh=new THREE.LineSegments(wireGeo,new THREE.LineBasicMaterial({color:0x2f6f66,transparent:true,opacity:0.35}));
     solidGroup.add(wireMesh);
 
-    // Outer curves
-    var curvePtsOuter1 = [];
-    for(var i=0;i<M;i++){
-      var t2 = i/(M-1);
-      var x = a + (b-a)*t2;
-      var y = f1(x);
-      if(axisType === 'vertical') curvePtsOuter1.push(new THREE.Vector3(x - k, y, 0));
-      else curvePtsOuter1.push(new THREE.Vector3(x, y - k, 0));
-    }
-    var outerCurveGeo1 = new THREE.BufferGeometry().setFromPoints(curvePtsOuter1);
-    outerCurveMesh = new THREE.Line(outerCurveGeo1, new THREE.LineBasicMaterial({ color:0xf5a524 }));
-    solidGroup.add(outerCurveMesh);
+    var pts1=[]; for(var i=0;i<M;i++){ var t=i/(M-1), x=a+(b-a)*t, y=f1(x); pts1.push(new THREE.Vector3(axisType==='vertical'?x-k:x, axisType==='vertical'?y:y-k,0)); }
+    outerCurveMesh=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts1),new THREE.LineBasicMaterial({color:0xf5a524})); solidGroup.add(outerCurveMesh);
+    if(f2){ var pts2=[]; for(var i=0;i<M;i++){ var t=i/(M-1), x=a+(b-a)*t, y=f2(x); pts2.push(new THREE.Vector3(axisType==='vertical'?x-k:x, axisType==='vertical'?y:y-k,0)); }
+    outerCurve2Mesh=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts2),new THREE.LineBasicMaterial({color:0xf5a524,transparent:true,opacity:0.6})); solidGroup.add(outerCurve2Mesh); }
+    if(hasInner||(axisType==='vertical'&&!hasInner)||f2){ var ptsI=[]; for(var i=0;i<M;i++){ var t=i/(M-1), x=a+(b-a)*t, y=g(x); ptsI.push(new THREE.Vector3(axisType==='vertical'?x-k:x, axisType==='vertical'?y:y-k,0)); }
+    innerCurveMesh=new THREE.Line(new THREE.BufferGeometry().setFromPoints(ptsI),new THREE.LineBasicMaterial({color:0xf5a524,transparent:true,opacity:0.45})); solidGroup.add(innerCurveMesh); }
 
-    if(f2){
-      var curvePtsOuter2 = [];
-      for(var i=0;i<M;i++){
-        var t2 = i/(M-1);
-        var x = a + (b-a)*t2;
-        var y = f2(x);
-        if(axisType === 'vertical') curvePtsOuter2.push(new THREE.Vector3(x - k, y, 0));
-        else curvePtsOuter2.push(new THREE.Vector3(x, y - k, 0));
-      }
-      var outerCurveGeo2 = new THREE.BufferGeometry().setFromPoints(curvePtsOuter2);
-      outerCurve2Mesh = new THREE.Line(outerCurveGeo2, new THREE.LineBasicMaterial({ color:0xf5a524, transparent:true, opacity:0.6 }));
-      solidGroup.add(outerCurve2Mesh);
-    }
-
-    if(hasInner || (axisType === 'vertical' && !hasInner) || f2){
-      var curvePtsInner = [];
-      for(var i=0;i<M;i++){
-        var t2 = i/(M-1);
-        var x = a + (b-a)*t2;
-        var y = g(x);
-        if(axisType === 'vertical') curvePtsInner.push(new THREE.Vector3(x - k, y, 0));
-        else curvePtsInner.push(new THREE.Vector3(x, y - k, 0));
-      }
-      var innerCurveGeo = new THREE.BufferGeometry().setFromPoints(curvePtsInner);
-      innerCurveMesh = new THREE.Line(innerCurveGeo, new THREE.LineBasicMaterial({ color:0xf5a524, transparent:true, opacity:0.45 }));
-      solidGroup.add(innerCurveMesh);
-    }
-
-    var maxAlong = Math.max.apply(null, along), minAlong = Math.min.apply(null, along);
-    var span = Math.max(1, maxAlong-minAlong);
-    var axisEndA, axisEndB;
-    if(axisType === 'vertical'){
-      axisEndA = new THREE.Vector3(0, minAlong-span*0.3, 0);
-      axisEndB = new THREE.Vector3(0, maxAlong+span*0.3, 0);
-    } else {
-      axisEndA = new THREE.Vector3(minAlong-span*0.3, 0, 0);
-      axisEndB = new THREE.Vector3(maxAlong+span*0.3, 0, 0);
-    }
-    var axisGeo = new THREE.BufferGeometry().setFromPoints([axisEndA, axisEndB]);
-    axisMesh = new THREE.Line(axisGeo, new THREE.LineDashedMaterial({ color:0xe2685f, dashSize:0.12, gapSize:0.08 }));
-    axisMesh.computeLineDistances();
-    solidGroup.add(axisMesh);
+    var maxAlong=Math.max.apply(null,along), minAlong=Math.min.apply(null,along), span=Math.max(1,maxAlong-minAlong);
+    var axisA, axisB;
+    if(axisType==='vertical'){ axisA=new THREE.Vector3(0,minAlong-span*0.3,0); axisB=new THREE.Vector3(0,maxAlong+span*0.3,0); }
+    else { axisA=new THREE.Vector3(minAlong-span*0.3,0,0); axisB=new THREE.Vector3(maxAlong+span*0.3,0,0); }
+    axisMesh=new THREE.Line(new THREE.BufferGeometry().setFromPoints([axisA,axisB]),new THREE.LineDashedMaterial({color:0xe2685f,dashSize:0.12,gapSize:0.08}));
+    axisMesh.computeLineDistances(); solidGroup.add(axisMesh);
 
     solidGroup.position.set(0,0,0);
-    if(axisType === 'vertical') solidGroup.position.x = k;
-    else solidGroup.position.y = k;
+    if(axisType==='vertical') solidGroup.position.x=k; else solidGroup.position.y=k;
 
-    if (!keepCamera) {
-      geo.computeBoundingSphere();
-      target.copy(geo.boundingSphere.center).add(solidGroup.position);
-      spherical.radius = Math.max(3, geo.boundingSphere.radius * 2.6);
-    }
-    grid.position.y = -0.001;
+    if(!keepCamera){ geo.computeBoundingSphere(); target.copy(geo.boundingSphere.center).add(solidGroup.position); spherical.radius=Math.max(3,geo.boundingSphere.radius*2.6); }
+    grid.position.y=-0.001;
 
     var volFull, method;
-    if(axisType === 'vertical'){
-      volFull = simpson(function(x){ return 2*Math.PI*Math.abs(x-k)*(top(x)-g(x)); }, a, b, 2000);
-      method = 'Shell method: 2π ∫|x−k|·[top(x)−g(x)] dx';
-    } else {
-      volFull = simpson(function(x){
-        var outer = top(x)-k, inner = g(x)-k;
-        return Math.PI*(outer*outer - inner*inner);
-      }, a, b, 2000);
-      method = 'Washer method: π ∫[(top(x)−k)² − (g(x)−k)²] dx';
+    if(axisType==='vertical'){
+      volFull=simpson(function(x){ return 2*Math.PI*Math.abs(x-k)*(top(x)-g(x)); }, a,b,2000);
+      method='Shell: 2π∫|x−k|(f−g)dx';
+    }else{
+      volFull=simpson(function(x){ var o=top(x)-k, i=g(x)-k; return Math.PI*(o*o-i*i); }, a,b,2000);
+      method='Washer: π∫[(f−k)²−(g−k)²]dx';
     }
-    var vol = volFull * (maxAngle / (2*Math.PI));
-    document.getElementById('volOut').textContent = vol.toFixed(4);
-    document.getElementById('methodOut').textContent = method;
-
-    var fnDisplay = fnStr + (f2 ? ' & ' + hnStr : '');
-    if(hasInner) fnDisplay += '  –  ' + gnStr;
-    document.getElementById('hudEq').textContent = 'y = ' + fnDisplay + '   on  [' + a.toFixed(2) + ', ' + b.toFixed(2) + ']';
-    document.getElementById('hudAxis').textContent = 'rotated about ' + (axisType==='vertical' ? 'x = ' : 'y = ') + k;
-    document.getElementById('hudAxisWorld').textContent = 'axis world position: ' + (axisType==='vertical' ? 'x' : 'y') + ' = ' + k.toFixed(4);
+    var vol=volFull*(maxAngle/(2*Math.PI));
+    document.getElementById('volOut').textContent=vol.toFixed(4);
+    document.getElementById('methodOut').textContent=method;
+    var fnDisplay=fnStr+(f2?' & '+hnStr:'')+(hasInner?' – '+gnStr:'');
+    document.getElementById('hudEq').textContent='y = '+fnDisplay+'   on ['+a.toFixed(2)+', '+b.toFixed(2)+']';
+    document.getElementById('hudAxis').textContent='rotated about '+(axisType==='vertical'?'x = ':'y = ')+k;
+    document.getElementById('hudAxisWorld').textContent='axis world position: '+(axisType==='vertical'?'x':'y')+' = '+k.toFixed(4);
 
     updatePink3D(currentState, currentState.pinkN);
     updateHighlightSlice(currentState);
     drawPreview(currentState, currentState.pinkN);
+
+    var slider=document.getElementById('blueXSlider');
+    slider.min=a; slider.max=b; slider.step=(b-a)/200;
+    var val=parseFloat(slider.value);
+    if(val<a||val>b) slider.value=blueX;
+    document.getElementById('blueXVal').textContent=parseFloat(slider.value).toFixed(2);
   }
 
-  // ---- Slider events ----
-  document.getElementById('opSlider').addEventListener('input', function(){
-    var val = this.value/100;
-    document.getElementById('opVal').textContent = val.toFixed(2);
-    if (surfaceMesh && surfaceMesh.material) {
-      surfaceMesh.material.opacity = val;
-      surfaceMesh.material.depthWrite = val > 0.75;
-      surfaceMesh.material.needsUpdate = true;
-    }
-    currentState.opacity = val;
+  document.getElementById('opSlider').addEventListener('input',function(){
+    var v=this.value/100; document.getElementById('opVal').textContent=v.toFixed(2);
+    if(surfaceMesh&&surfaceMesh.material){ surfaceMesh.material.opacity=v; surfaceMesh.material.depthWrite=v>0.75; surfaceMesh.material.needsUpdate=true; }
+    currentState.opacity=v;
   });
-
-  document.getElementById('angleSlider').addEventListener('input', function(){
-    var deg = parseInt(this.value, 10);
-    document.getElementById('angleVal').textContent = deg + '°';
+  document.getElementById('angleSlider').addEventListener('input',function(){
+    var deg=parseInt(this.value); document.getElementById('angleVal').textContent=deg+'°';
     buildScene(true);
   });
-
-  document.getElementById('blueXSlider').addEventListener('input', function(){
-    var blueX = parseFloat(this.value);
-    document.getElementById('blueXVal').textContent = blueX.toFixed(2);
-    currentState.blueX = blueX;
+  document.getElementById('blueXSlider').addEventListener('input',function(){
+    var x=parseFloat(this.value); document.getElementById('blueXVal').textContent=x.toFixed(2);
+    currentState.blueX=x;
     drawPreview(currentState, currentState.pinkN);
     updateHighlightSlice(currentState);
   });
-
-  document.getElementById('pinkNSlider').addEventListener('input', function(){
-    var n = parseInt(this.value, 10);
-    document.getElementById('pinkNVal').textContent = n;
-    currentState.pinkN = n;
+  document.getElementById('pinkNSlider').addEventListener('input',function(){
+    var n=parseInt(this.value); document.getElementById('pinkNVal').textContent=n;
+    currentState.pinkN=n;
     drawPreview(currentState, n);
     updatePink3D(currentState, n);
     updateHighlightSlice(currentState);
   });
-
-  document.getElementById('methodSelect').addEventListener('change', function(){
-    currentState.vizMethod = this.value;
+  document.getElementById('methodSelect').addEventListener('change',function(){
+    currentState.vizMethod=this.value;
     drawPreview(currentState, currentState.pinkN);
     updateHighlightSlice(currentState);
   });
+  function setAxisEqLabel(){ document.getElementById('axisEqLabel').textContent=document.getElementById('axisType').value==='vertical'?'x =':'y ='; }
+  document.getElementById('axisType').addEventListener('change',setAxisEqLabel);
+  document.getElementById('renderBtn').addEventListener('click',function(){ buildScene(false); });
+  document.getElementById('kInput').addEventListener('keydown',function(e){ if(e.key==='Enter')buildScene(false); });
 
-  function setAxisEqLabel(){
-    document.getElementById('axisEqLabel').textContent = document.getElementById('axisType').value==='vertical' ? 'x =' : 'y =';
-  }
-  document.getElementById('axisType').addEventListener('change', setAxisEqLabel);
-
-  document.getElementById('renderBtn').addEventListener('click', function(){ buildScene(false); });
-  document.getElementById('kInput').addEventListener('keydown', function(e){
-    if(e.key === 'Enter') buildScene(false);
-  });
-
-  var presets = {
-    'sin-vert': { fn:'sin(x)', hn:'', gn:'', a:'0', b:'pi', axis:'vertical', k:'-1' },
-    'disk':     { fn:'x^2', hn:'', gn:'', a:'0', b:'2', axis:'horizontal', k:'0' },
-    'washer':   { fn:'sqrt(x)', hn:'', gn:'x/2', a:'0', b:'4', axis:'horizontal', k:'0' },
-    'shell':    { fn:'x^2', hn:'', gn:'', a:'0', b:'1', axis:'vertical', k:'2' },
-    'expx':     { fn:'e^x', hn:'', gn:'', a:'0', b:'2', axis:'horizontal', k:'-1' },
-    'three-curves': { fn:'x^2', hn:'8-x^2', gn:'0', a:'0', b:'2', axis:'horizontal', k:'0' }
+  var presets={
+    'sin-vert':{fn:'sin(x)',hn:'',gn:'',a:'0',b:'pi',axis:'vertical',k:'-1'},
+    'disk':{fn:'x^2',hn:'',gn:'',a:'0',b:'2',axis:'horizontal',k:'0'},
+    'washer':{fn:'sqrt(x)',hn:'',gn:'x/2',a:'0',b:'4',axis:'horizontal',k:'0'},
+    'shell':{fn:'x^2',hn:'',gn:'',a:'0',b:'1',axis:'vertical',k:'2'},
+    'expx':{fn:'e^x',hn:'',gn:'',a:'0',b:'2',axis:'horizontal',k:'-1'},
+    'three-curves':{fn:'x^2',hn:'8-x^2',gn:'0',a:'0',b:'2',axis:'horizontal',k:'0'}
   };
   document.querySelectorAll('.preset-btn').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      var p = presets[this.getAttribute('data-preset')];
-      document.getElementById('fnInput').value = p.fn;
-      document.getElementById('hnInput').value = p.hn;
-      document.getElementById('gnInput').value = p.gn;
-      document.getElementById('aInput').value = p.a;
-      document.getElementById('bInput').value = p.b;
-      document.getElementById('axisType').value = p.axis;
-      setAxisEqLabel();
-      document.getElementById('kInput').value = p.k;
+    btn.addEventListener('click',function(){
+      var p=presets[this.dataset.preset];
+      document.getElementById('fnInput').value=p.fn; document.getElementById('hnInput').value=p.hn;
+      document.getElementById('gnInput').value=p.gn; document.getElementById('aInput').value=p.a;
+      document.getElementById('bInput').value=p.b; document.getElementById('axisType').value=p.axis;
+      setAxisEqLabel(); document.getElementById('kInput').value=p.k;
       buildScene(false);
     });
   });
 
   setAxisEqLabel();
-  var initialBuild = function(){
-    buildScene(false);
-    var a = currentState.a, b = currentState.b;
-    var slider = document.getElementById('blueXSlider');
-    slider.min = a;
-    slider.max = b;
-    slider.step = (b - a) / 200;
-    var cur = parseFloat(slider.value);
-    if (cur < a || cur > b) slider.value = (a+b)/2;
-    document.getElementById('blueXVal').textContent = parseFloat(slider.value).toFixed(2);
-    currentState.blueX = parseFloat(slider.value);
-    updateHighlightSlice(currentState);
-    drawPreview(currentState, currentState.pinkN);
-  };
-  initialBuild();
+  buildScene(false);
   resize();
   animate();
-});
+})();
 </script>
 </body>
 </html>
