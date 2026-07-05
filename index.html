@@ -366,9 +366,9 @@
       The grey grid sits at <b>y = 0</b>. The red dashed line is the revolution axis.<br>
       Coordinate axes: <span style="color:#ff5555">x</span>, <span style="color:#55ff55">y</span>, <span style="color:#5555ff">z</span>.
       <br><br>
-      <!-- Added onclick handler to prevent Three.js pointer interception -->
-      View the source code on <a href="https://github.com/congaterori/Solid-of-Revolution-3D-Visualizer" target="_blank" onclick="event.stopPropagation();" style="color: var(--teal); text-decoration: underline;">Github</a>.
+      View the source code on <a href="https://github.com/congaterori/Solid-of-Revolution-3D-Visualizer" target="_blank" onclick="event.stopPropagation();" style="color: var(--teal); text-decoration: underline; word-break: break-all;">https://github.com/congaterori/Solid-of-Revolution-3D-Visualizer</a>.
     </div>
+  </div> <!-- 1. This closes .hint AND 2. This closes .panel to separate it from the viewport! -->
 
   <div class="viewport">
     <canvas id="glcanvas"></canvas>
@@ -385,6 +385,7 @@
       <span><span class="dot" style="background:var(--rose)"></span>axis of revolution</span>
     </div>
   </div>
+</div> <!-- 3. This closes the main .app wrapper -->
 
 <script>
 window.addEventListener('load', function(){
